@@ -1,17 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Star, Clock, ShoppingCart, Check, ChevronLeft, ChevronRight, Sparkles, Zap, Headphones, Palette, Code, Wrench, Video, Globe, Cpu, Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Filter, Star, ChevronRight, Sparkles, Zap, Headphones, Palette, Wrench, Code, Video, Globe, Cpu, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppStore } from '@/store/appStore';
 import { audioService } from '@/lib/audio';
+import { ProductModalUltra } from '@/components/ProductModalUltra';
 import type { Product } from '@/lib/supabase';
 
-// 8 Categories with icons
+// 8 Categories with icons (used in filter sheet only)
 const categories = [
   { id: 'all', label: 'Semua', icon: Sparkles },
   { id: 'installation', label: 'Instalasi', icon: Wrench },
@@ -31,18 +32,79 @@ const promoTypes = [
   { type: 'bestseller', label: '⭐ Best Seller', color: 'from-yellow-500 to-amber-500' },
 ];
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+};
+
+const cardHoverVariants = {
+  rest: { scale: 1, y: 0 },
+  hover: {
+    scale: 1.02,
+    y: -4,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 400,
+      damping: 17,
+    },
+  },
+  tap: { scale: 0.98 },
+};
+
+const badgeVariants = {
+  initial: { scale: 0, rotate: -180 },
+  animate: {
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: 'spring' as const,
+      stiffness: 260,
+      damping: 20,
+    },
+  },
+};
+
+const pulseVariants = {
+  pulse: {
+    scale: [1, 1.05, 1],
+    opacity: [1, 0.8, 1],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut' as const,
+    },
+  },
+};
+
 export function HomeSection() {
   const { products, isLoading } = useProducts();
   const { addToCart, cart, addRecentlyViewed, isDarkMode } = useAppStore();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedTier, setSelectedTier] = useState<string>('');
-  const [showProductDialog, setShowProductDialog] = useState(false);
-  const [addedToCart, setAddedToCart] = useState<string | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [currentPromo, setCurrentPromo] = useState<typeof promoTypes[0] | null>(null);
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   // Filter products based on category and search query
   const filteredProducts = products.filter((product) => {
@@ -78,18 +140,13 @@ export function HomeSection() {
   const handleProductClick = (product: Product) => {
     audioService.playClick();
     setSelectedProduct(product);
-    setSelectedTier(product.tiers[0]?.name || '');
-    setShowProductDialog(true);
+    setShowProductModal(true);
     addRecentlyViewed(product.id);
   };
 
-  const handleAddToCart = () => {
-    if (selectedProduct && selectedTier) {
-      addToCart(selectedProduct, selectedTier);
-      audioService.playSuccess();
-      setAddedToCart(`${selectedProduct.id}-${selectedTier}`);
-      setTimeout(() => setAddedToCart(null), 2000);
-    }
+  const handleAddToCart = (product: Product, tier: string) => {
+    addToCart(product, tier);
+    setShowProductModal(false);
   };
 
   const handlePromoClick = (promo: typeof promoTypes[0]) => {
@@ -107,106 +164,134 @@ export function HomeSection() {
     return item?.quantity || 0;
   };
 
-  const scrollCategories = (direction: 'left' | 'right') => {
-    if (categoryScrollRef.current) {
-      const scrollAmount = 200;
-      categoryScrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      });
-    }
-  };
-
   return (
-    <div className={`pb-20 min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <motion.div 
+      className={`pb-20 min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       {/* Hero Banner */}
       <HeroBanner />
 
       {/* Promo Badges */}
-      <div className="px-4 py-3">
+      <motion.div 
+        className="px-4 py-3"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          {promoTypes.map((promo) => (
-            <button
+          {promoTypes.map((promo, index) => (
+            <motion.button
               key={promo.type}
               onClick={() => handlePromoClick(promo)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium text-white bg-gradient-to-r ${promo.color} shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95`}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium text-white bg-gradient-to-r ${promo.color} shadow-lg`}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 * index, duration: 0.4 }}
+              whileHover={{ 
+                scale: 1.05, 
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+              }}
+              whileTap={{ scale: 0.95 }}
             >
               {promo.label}
-            </button>
+            </motion.button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Search & Filter */}
-      <div className={`sticky top-[60px] z-30 px-4 py-3 ${isDarkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm shadow-sm`}>
+      <motion.div 
+        className={`sticky top-[60px] z-30 px-4 py-3 transition-all duration-500 ${isDarkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm shadow-sm`}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+      >
         <div className="flex gap-2">
-          <div className="relative flex-1">
+          <motion.div 
+            className="relative flex-1"
+            whileFocus={{ scale: 1.01 }}
+          >
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Cari layanan..."
-              className={`pl-9 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : ''}`}
+              className={`pl-9 transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white focus:border-primary' : 'focus:border-primary'}`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
+          </motion.div>
           <Sheet>
             <SheetTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => audioService.playClick()}
-                className={isDarkMode ? 'border-gray-700 bg-gray-800' : ''}
-              >
-                <Filter className="h-4 w-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => audioService.playClick()}
+                  className={`transition-all duration-300 ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                >
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </SheetTrigger>
-            <SheetContent side="bottom" className={`h-[70vh] ${isDarkMode ? 'bg-gray-900' : ''}`}>
+            <SheetContent side="bottom" className={`h-[70vh] transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
               <SheetHeader>
-                <SheetTitle className={isDarkMode ? 'text-white' : ''}>Filter Layanan</SheetTitle>
+                <SheetTitle className={`transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Filter Layanan</SheetTitle>
               </SheetHeader>
               <div className="mt-4 space-y-4">
                 <div>
-                  <h4 className={`font-medium mb-3 ${isDarkMode ? 'text-white' : ''}`}>Kategori</h4>
+                  <h4 className={`font-medium mb-3 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Kategori</h4>
                   <div className="flex flex-wrap gap-2">
-                    {categories.map((cat) => {
+                    {categories.map((cat, index) => {
                       const Icon = cat.icon;
                       return (
-                        <button
+                        <motion.button
                           key={cat.id}
                           onClick={() => {
                             handleCategoryClick(cat.id);
                             audioService.playClick();
                           }}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all ${
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-300 ${
                             selectedCategory === cat.id
                               ? 'bg-gradient-to-r from-blue-600 to-orange-500 text-white shadow-lg'
                               : isDarkMode 
                                 ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.05 * index }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
                           <Icon className="h-4 w-4" />
                           {cat.label}
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>
                 </div>
                 
                 <div>
-                  <h4 className={`font-medium mb-3 ${isDarkMode ? 'text-white' : ''}`}>Urutkan</h4>
+                  <h4 className={`font-medium mb-3 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Urutkan</h4>
                   <div className="space-y-2">
-                    {['Harga Terendah', 'Harga Tertinggi', 'Rating Tertinggi', 'Paling Banyak Dibeli'].map((sort) => (
-                      <button
+                    {['Harga Terendah', 'Harga Tertinggi', 'Rating Tertinggi', 'Paling Banyak Dibeli'].map((sort, index) => (
+                      <motion.button
                         key={sort}
-                        className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-colors ${
+                        className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-300 ${
                           isDarkMode 
                             ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
                             : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                         }`}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.05 * index }}
+                        whileHover={{ x: 4 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         {sort}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -214,253 +299,143 @@ export function HomeSection() {
             </SheetContent>
           </Sheet>
         </div>
-
-        {/* Category Pills - Swipeable */}
-        <div className="relative mt-3">
-          <button
-            onClick={() => scrollCategories('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 shadow-lg rounded-full flex items-center justify-center hover:bg-white transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          
-          <div 
-            ref={categoryScrollRef}
-            className="flex gap-2 overflow-x-auto scrollbar-hide px-10 py-1"
-          >
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryClick(cat.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                    selectedCategory === cat.id
-                      ? 'bg-gradient-to-r from-blue-600 to-orange-500 text-white shadow-lg scale-105'
-                      : isDarkMode
-                        ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-          
-          <button
-            onClick={() => scrollCategories('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 shadow-lg rounded-full flex items-center justify-center hover:bg-white transition-colors"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Products Grid */}
       <div className="px-4 py-4">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-4">
+          <motion.div 
+            className="grid grid-cols-2 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`rounded-xl h-64 animate-pulse ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`} />
-            ))}
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-              <Search className={`h-8 w-8 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
-            </div>
-            <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>Tidak ada layanan yang ditemukan</p>
-            {searchQuery && (
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => {setSearchQuery(''); setSelectedCategory('all');}}
+              <motion.div 
+                key={i} 
+                className={`rounded-xl h-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+                variants={itemVariants}
               >
-                Reset Filter
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {filteredProducts.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onClick={() => handleProductClick(product)}
-                isInCart={isInCart(product.id, product.tiers[0]?.name || '')}
-                cartQuantity={getCartQuantity(product.id, product.tiers[0]?.name || '')}
-                style={{ animationDelay: `${index * 0.05}s` }}
-                isDarkMode={isDarkMode}
-              />
+                <motion.div
+                  className="w-full h-full rounded-xl"
+                  animate={{
+                    background: [
+                      isDarkMode ? 'rgba(31, 41, 55, 1)' : 'rgba(243, 244, 246, 1)',
+                      isDarkMode ? 'rgba(55, 65, 81, 1)' : 'rgba(229, 231, 235, 1)',
+                      isDarkMode ? 'rgba(31, 41, 55, 1)' : 'rgba(243, 244, 246, 1)',
+                    ],
+                  }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
+        ) : filteredProducts.length === 0 ? (
+          <motion.div 
+            className="text-center py-12"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <motion.div 
+              className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Search className={`h-8 w-8 transition-colors duration-300 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+            </motion.div>
+            <p className={`transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tidak ada layanan yang ditemukan</p>
+            {searchQuery && (
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {setSearchQuery(''); setSelectedCategory('all');}}
+                >
+                  Reset Filter
+                </Button>
+              </motion.div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="grid grid-cols-2 gap-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence mode="popLayout">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onClick={() => handleProductClick(product)}
+                  isInCart={isInCart(product.id, product.tiers[0]?.name || '')}
+                  cartQuantity={getCartQuantity(product.id, product.tiers[0]?.name || '')}
+                  isDarkMode={isDarkMode}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
 
-      {/* Product Detail Dialog */}
-      <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-        <DialogContent className={`max-w-lg max-h-[90vh] overflow-auto ${isDarkMode ? 'bg-gray-900 border-gray-700' : ''}`}>
-          {selectedProduct && (
-            <>
-              <DialogHeader>
-                <DialogTitle className={isDarkMode ? 'text-white' : ''}>{selectedProduct.title}</DialogTitle>
-              </DialogHeader>
-              
-              <div className="mt-4">
-                <img
-                  src={selectedProduct.image}
-                  alt={selectedProduct.title}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="flex items-center text-yellow-500">
-                    <Star className="h-4 w-4 fill-current" />
-                    <span className="ml-1 text-sm font-medium">{selectedProduct.rating}</span>
-                  </div>
-                  <span className="text-gray-400">•</span>
-                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{selectedProduct.reviews} ulasan</span>
-                  <span className="text-gray-400">•</span>
-                  <div className={`flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <Clock className="h-4 w-4" />
-                    <span className="ml-1 text-sm">{selectedProduct.duration}</span>
-                  </div>
-                </div>
-
-                <p className={`mt-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedProduct.description}</p>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {selectedProduct.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      #{tag}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Tier Selection - Scrollable for many options */}
-                <div className="mt-4">
-                  <h4 className={`font-medium mb-2 ${isDarkMode ? 'text-white' : ''}`}>Pilih Paket ({selectedProduct.tiers.length} pilihan)</h4>
-                  <ScrollArea className="w-full">
-                    <div className="flex gap-2 pb-2">
-                      {selectedProduct.tiers.map((tier) => (
-                        <button
-                          key={tier.name}
-                          onClick={() => {
-                            setSelectedTier(tier.name);
-                            audioService.playClick();
-                          }}
-                          className={`flex-shrink-0 p-3 rounded-lg border-2 text-left transition-all min-w-[140px] max-w-[180px] ${
-                            selectedTier === tier.name
-                              ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                              : isDarkMode
-                                ? 'border-gray-700 bg-gray-800 hover:border-gray-600'
-                                : 'border-gray-200 hover:border-blue-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : ''}`}>{tier.name}</span>
-                            <span className="text-blue-600 font-bold text-sm">
-                              Rp {tier.price.toLocaleString('id-ID')}
-                            </span>
-                          </div>
-                          <ul className="mt-2 space-y-1">
-                            {tier.features.slice(0, 3).map((feature, idx) => (
-                              <li key={idx} className={`text-xs flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <Check className="h-3 w-3 text-green-500 mr-1 flex-shrink-0" />
-                                <span className="truncate">{feature}</span>
-                              </li>
-                            ))}
-                            {tier.features.length > 3 && (
-                              <li className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                                +{tier.features.length - 3} fitur lainnya
-                              </li>
-                            )}
-                          </ul>
-                        </button>
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </div>
-
-                {/* Selected Tier Features Detail */}
-                {selectedTier && (
-                  <div className={`mt-4 p-3 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
-                    <h5 className={`font-medium text-sm mb-2 ${isDarkMode ? 'text-white' : ''}`}>
-                      Fitur {selectedTier}:
-                    </h5>
-                    <ul className="space-y-1">
-                      {selectedProduct.tiers.find(t => t.name === selectedTier)?.features.map((feature, idx) => (
-                        <li key={idx} className={`text-xs flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Add to Cart */}
-                <Button
-                  className="w-full mt-4 bg-gradient-to-r from-blue-600 to-orange-500 hover:from-blue-700 hover:to-orange-600"
-                  onClick={handleAddToCart}
-                  disabled={addedToCart === `${selectedProduct.id}-${selectedTier}` || !selectedTier}
-                >
-                  {addedToCart === `${selectedProduct.id}-${selectedTier}` ? (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Ditambahkan
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Tambah ke Keranjang
-                    </>
-                  )}
-                </Button>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Product Detail Modal - Using ProductModalUltra */}
+      <ProductModalUltra
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        product={selectedProduct}
+        onAddToCart={handleAddToCart}
+      />
 
       {/* Promo Modal */}
       <Dialog open={showPromoModal} onOpenChange={setShowPromoModal}>
-        <DialogContent className={`max-w-md ${isDarkMode ? 'bg-gray-900 border-gray-700' : ''}`}>
+        <DialogContent className={`max-w-md transition-colors duration-500 ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white'}`}>
           <DialogHeader>
-            <DialogTitle className={isDarkMode ? 'text-white' : ''}>
+            <DialogTitle className={`transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>
               {currentPromo?.label}
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-4 space-y-3">
+          <motion.div 
+            className="mt-4 space-y-3"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
             {currentPromo && getPromoProducts(currentPromo.type).map((product) => (
-              <div
+              <motion.div
                 key={product.id}
                 onClick={() => {
                   handleProductClick(product);
                   setShowPromoModal(false);
                 }}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-300 ${
                   isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'
                 }`}
+                variants={itemVariants}
+                whileHover={{ x: 4, scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
               >
-                <img src={product.icon} alt={product.title} className="w-12 h-12 object-cover rounded-lg" />
+                <motion.img 
+                  src={product.icon} 
+                  alt={product.title} 
+                  className="w-12 h-12 object-cover rounded-lg"
+                  whileHover={{ rotate: 5, scale: 1.1 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                />
                 <div className="flex-1">
-                  <p className={`font-medium text-sm ${isDarkMode ? 'text-white' : ''}`}>{product.title}</p>
+                  <p className={`font-medium text-sm transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>{product.title}</p>
                   <p className="text-xs text-blue-600">
                     Rp {(product.discount_price || product.base_price).toLocaleString('id-ID')}
                   </p>
                 </div>
-                <ChevronRight className={`h-4 w-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-              </div>
+                <ChevronRight className={`h-4 w-4 transition-colors duration-300 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
 
@@ -503,35 +478,62 @@ function HeroBanner() {
 
   return (
     <div className="relative h-48 overflow-hidden">
-      {slides.map((slide, index) => {
-        const Icon = slide.icon;
-        return (
-          <div
-            key={index}
-            className={`absolute inset-0 flex items-center justify-center bg-gradient-to-r px-6 transition-all duration-700 ${
-              slide.gradient
-            } ${currentSlide === index ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}`}
-          >
-            <div className="text-center text-white">
-              <div className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <Icon className="h-8 w-8" />
+      <AnimatePresence mode="wait">
+        {slides.map((slide, index) => {
+          const Icon = slide.icon;
+          if (currentSlide !== index) return null;
+          return (
+            <motion.div
+              key={index}
+              className={`absolute inset-0 flex items-center justify-center bg-gradient-to-r px-6 ${slide.gradient}`}
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.7, ease: 'easeInOut' }}
+            >
+              <div className="text-center text-white">
+                <motion.div 
+                  className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                >
+                  <Icon className="h-8 w-8" />
+                </motion.div>
+                <motion.h2 
+                  className="text-xl font-bold"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {slide.title}
+                </motion.h2>
+                <motion.p 
+                  className="text-white/80 mt-2 text-sm"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  {slide.subtitle}
+                </motion.p>
               </div>
-              <h2 className="text-xl font-bold">{slide.title}</h2>
-              <p className="text-white/80 mt-2 text-sm">{slide.subtitle}</p>
-            </div>
-          </div>
-        );
-      })}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
 
       {/* Navigation Dots */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
         {slides.map((_, index) => (
-          <button
+          <motion.button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`h-2 rounded-full transition-all ${
-              currentSlide === index ? 'bg-white w-6' : 'bg-white/50 w-2'
+            className={`h-2 rounded-full transition-all duration-300 ${
+              currentSlide === index ? 'bg-white' : 'bg-white/50'
             }`}
+            animate={{ width: currentSlide === index ? 24 : 8 }}
+            whileHover={{ scale: 1.2 }}
+            whileTap={{ scale: 0.9 }}
           />
         ))}
       </div>
@@ -544,67 +546,159 @@ interface ProductCardProps {
   onClick: () => void;
   isInCart: boolean;
   cartQuantity: number;
-  style?: React.CSSProperties;
   isDarkMode: boolean;
+
 }
 
-function ProductCard({ product, onClick, isInCart, cartQuantity, style, isDarkMode }: ProductCardProps) {
+function ProductCard({ product, onClick, isInCart, cartQuantity, isDarkMode }: ProductCardProps) {
   const price = product.discount_price || product.base_price;
   const hasDiscount = product.discount_price && product.discount_price < product.base_price;
   const discountPercent = hasDiscount 
     ? Math.round(((product.base_price - (product.discount_price || 0)) / product.base_price) * 100)
     : 0;
+  const isLowStock = product.stock < 20;
+  const isVeryLowStock = product.stock < 10;
 
   return (
-    <div
+    <motion.div
       onClick={onClick}
-      className={`rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] animate-fade-in ${
+      className={`rounded-xl shadow-sm overflow-hidden cursor-pointer transition-shadow duration-300 ${
         isDarkMode ? 'bg-gray-800' : 'bg-white'
       }`}
-      style={style}
+      variants={itemVariants}
+      initial="rest"
+      whileHover="hover"
+      whileTap="tap"
+      layout
     >
-      <div className="relative aspect-square">
-        <img
+      <motion.div 
+        className="relative aspect-square"
+        variants={cardHoverVariants}
+      >
+        <motion.img
           src={product.icon}
           alt={product.title}
           className="w-full h-full object-cover"
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.4 }}
         />
-        {hasDiscount && (
-          <Badge className="absolute top-2 left-2 bg-red-500 text-white">
-            -{discountPercent}%
-          </Badge>
-        )}
-        {isInCart && (
-          <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center animate-bounce">
-            {cartQuantity}
-          </div>
-        )}
-        {product.stock < 20 && (
-          <Badge className="absolute bottom-2 left-2 bg-orange-500 text-white text-xs">
-            Stok Terbatas
-          </Badge>
-        )}
-      </div>
+        <AnimatePresence>
+          {hasDiscount && (
+            <motion.div
+              className="absolute top-2 left-2"
+              variants={badgeVariants}
+              initial="initial"
+              animate="animate"
+              exit={{ scale: 0, rotate: 180 }}
+            >
+              <Badge className="bg-red-500 text-white border-0 shadow-lg">
+                -{discountPercent}%
+              </Badge>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {isInCart && (
+            <motion.div 
+              className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+              initial={{ scale: 0, y: -20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0, y: -20 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+            >
+              {cartQuantity}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {isLowStock && (
+            <motion.div
+              className="absolute bottom-2 left-2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <motion.div
+                variants={pulseVariants}
+                animate="pulse"
+              >
+                <Badge 
+                  className={`text-xs border-0 shadow-lg ${
+                    isVeryLowStock 
+                      ? 'bg-red-500 text-white' 
+                      : 'bg-orange-500 text-white'
+                  }`}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full bg-white ${isVeryLowStock ? 'animate-ping' : ''}`} />
+                    Stok {isVeryLowStock ? 'Hampir Habis' : 'Terbatas'}
+                  </span>
+                </Badge>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Hover overlay */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-4"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium"
+            initial={{ y: 20, opacity: 0 }}
+            whileHover={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            Lihat Detail
+          </motion.div>
+        </motion.div>
+      </motion.div>
       <div className="p-3">
-        <h3 className={`font-medium text-sm line-clamp-1 ${isDarkMode ? 'text-white' : ''}`}>{product.title}</h3>
-        <p className={`text-xs line-clamp-2 mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{product.description}</p>
+        <motion.h3 
+          className={`font-medium text-sm line-clamp-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}
+          layout
+        >
+          {product.title}
+        </motion.h3>
+        <p className={`text-xs line-clamp-2 mt-1 transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {product.description}
+        </p>
         <div className="flex items-center justify-between mt-2">
           <div>
-            <span className="text-blue-600 font-bold text-sm">
+            <motion.span 
+              className="text-blue-600 font-bold text-sm"
+              key={price}
+              initial={{ scale: 1.2, color: '#f59e0b' }}
+              animate={{ scale: 1, color: '#2563eb' }}
+              transition={{ duration: 0.3 }}
+            >
               Rp {price.toLocaleString('id-ID')}
-            </span>
-            {hasDiscount && (
-              <span className={`text-xs line-through ml-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                Rp {product.base_price.toLocaleString('id-ID')}
-              </span>
-            )}
+            </motion.span>
+            <AnimatePresence>
+              {hasDiscount && (
+                <motion.span 
+                  className={`text-xs line-through ml-1 transition-colors duration-300 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                >
+                  Rp {product.base_price.toLocaleString('id-ID')}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="flex items-center text-yellow-500 text-xs">
+          <motion.div 
+            className="flex items-center text-yellow-500 text-xs"
+            whileHover={{ scale: 1.1 }}
+          >
             <Star className="h-3 w-3 fill-current" />
             <span className="ml-0.5">{product.rating}</span>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

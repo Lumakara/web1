@@ -27,6 +27,10 @@ export interface Review {
 
 export type ThemeType = 'default' | 'ocean' | 'sunset' | 'forest' | 'dark';
 
+export type AnimationType = 'v1' | 'v2' | 'v3' | 'off';
+
+export type EffectType = 'v1' | 'v2' | 'v3' | 'off';
+
 interface AppState {
   // Auth
   user: AuthUser | null;
@@ -85,6 +89,12 @@ interface AppState {
   musicEnabled: boolean;
   toggleSound: () => void;
   toggleMusic: () => void;
+
+  // Animation & Effect Settings
+  animationLevel: AnimationType;
+  effectLevel: EffectType;
+  setAnimationLevel: (level: AnimationType) => void;
+  setEffectLevel: (level: EffectType) => void;
 
   // Welcome Modal
   hasSeenWelcome: boolean;
@@ -212,6 +222,12 @@ export const useAppStore = create<AppState>()(
       toggleSound: () => set((state) => ({ soundEnabled: !state.soundEnabled })),
       toggleMusic: () => set((state) => ({ musicEnabled: !state.musicEnabled })),
 
+      // Animation & Effect Settings
+      animationLevel: 'off',
+      effectLevel: 'off',
+      setAnimationLevel: (level) => set({ animationLevel: level }),
+      setEffectLevel: (level) => set({ effectLevel: level }),
+
       // Welcome Modal
       hasSeenWelcome: false,
       setHasSeenWelcome: (seen) => set({ hasSeenWelcome: seen }),
@@ -232,6 +248,8 @@ export const useAppStore = create<AppState>()(
         musicEnabled: state.musicEnabled,
         hasSeenWelcome: state.hasSeenWelcome,
         hasSeenTutorial: state.hasSeenTutorial,
+        animationLevel: state.animationLevel,
+        effectLevel: state.effectLevel,
       }),
     }
   )

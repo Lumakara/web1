@@ -6,6 +6,13 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_qe
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Database types
+export interface FormField {
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -22,6 +29,9 @@ export interface Product {
   tags: string[];
   tiers: Tier[];
   related: string[];
+  benefits?: string[];
+  terms_conditions?: string;
+  form_fields?: FormField[];
   created_at?: string;
   updated_at?: string;
 }
@@ -463,6 +473,185 @@ function getMockProducts(): Product[] {
         { name: 'Premium', price: 199000, features: ['8 CPU cores', '16GB RAM', '200GB SSD', 'Unlimited bandwidth'] }
       ],
       related: ['wifi', 'code']
+    },
+    {
+      id: 'pterodactyl',
+      title: 'Pterodactyl Panel',
+      category: 'technical',
+      base_price: 50000,
+      discount_price: 50000,
+      stock: 100,
+      image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400',
+      icon: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200',
+      rating: 4.9,
+      reviews: 89,
+      duration: 'Instant',
+      description: 'Panel hosting game server profesional dengan antarmuka yang mudah digunakan',
+      tags: ['hosting', 'game-server', 'panel'],
+      tiers: [
+        { 
+          name: '5GB', 
+          price: 50000, 
+          features: [
+            '1 CPU Core',
+            '2GB RAM',
+            '5GB SSD Storage',
+            'Unlimited Bandwidth',
+            'DDoS Protection',
+            'Auto Backup',
+            '24/7 Support'
+          ] 
+        },
+        { 
+          name: '10GB', 
+          price: 100000, 
+          features: [
+            '2 CPU Cores',
+            '4GB RAM',
+            '10GB SSD Storage',
+            'Unlimited Bandwidth',
+            'DDoS Protection',
+            'Auto Backup',
+            'Priority Support',
+            'Custom Domain'
+          ] 
+        },
+        { 
+          name: 'Unlimited', 
+          price: 200000, 
+          features: [
+            '4 CPU Cores',
+            '8GB RAM',
+            'Unlimited SSD Storage',
+            'Unlimited Bandwidth',
+            'Advanced DDoS Protection',
+            'Auto Backup & Restore',
+            'Priority Support 24/7',
+            'Custom Domain & SSL',
+            'Dedicated IP'
+          ] 
+        }
+      ],
+      related: ['vps', 'code'],
+      benefits: [
+        'Panel mudah digunakan untuk semua game populer',
+        'Support Minecraft, CS:GO, Valheim, dan lainnya',
+        'Backup otomatis harian',
+        'Jaminan uptime 99.9%',
+        'Migrasi gratis dari provider lain'
+      ],
+      terms_conditions: 'Minimum kontrak 1 bulan. Pembatalan dapat dilakukan kapan saja. Refund tersedia dalam 7 hari pertama.',
+      form_fields: [
+        { name: 'game_type', label: 'Jenis Game', type: 'select', required: true },
+        { name: 'server_name', label: 'Nama Server', type: 'text', required: true },
+        { name: 'additional_notes', label: 'Catatan Tambahan', type: 'textarea', required: false }
+      ]
+    },
+    {
+      id: 'wifi-installasi',
+      title: 'WiFi Instalasi ION Network',
+      category: 'installation',
+      base_price: 235997,
+      stock: 50,
+      image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400',
+      icon: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=200',
+      rating: 4.8,
+      reviews: 156,
+      duration: '1-3 hari',
+      description: 'Layanan instalasi WiFi profesional dari ION Network dengan berbagai paket kecepatan',
+      tags: ['wifi', 'internet', 'instalasi'],
+      tiers: [
+        { 
+          name: 'FLASH 60Mbps', 
+          price: 235997, 
+          features: [
+            'Kecepatan 60Mbps',
+            'Upload 30Mbps',
+            'Support hingga 5 device',
+            'Router included',
+            'Instalasi gratis',
+            'Support 24/7'
+          ] 
+        },
+        { 
+          name: 'LIGHT 100Mbps', 
+          price: 285630, 
+          features: [
+            'Kecepatan 100Mbps',
+            'Upload 50Mbps',
+            'Support hingga 10 device',
+            'Dual-band router',
+            'Instalasi gratis',
+            'Support 24/7'
+          ] 
+        },
+        { 
+          name: 'AMAZING 150Mbps', 
+          price: 358651, 
+          features: [
+            'Kecepatan 150Mbps',
+            'Upload 75Mbps',
+            'Support hingga 15 device',
+            'WiFi 6 router',
+            'Instalasi gratis',
+            'Priority support'
+          ] 
+        },
+        { 
+          name: 'BLITZ 300Mbps', 
+          price: 526816, 
+          features: [
+            'Kecepatan 300Mbps',
+            'Upload 150Mbps',
+            'Support hingga 25 device',
+            'Mesh WiFi system',
+            'Instalasi premium',
+            'Dedicated support'
+          ] 
+        },
+        { 
+          name: 'UNIVERSE 500Mbps', 
+          price: 650770, 
+          features: [
+            'Kecepatan 500Mbps',
+            'Upload 250Mbps',
+            'Support hingga 40 device',
+            'Enterprise mesh system',
+            'Instalasi premium',
+            'VIP support 24/7'
+          ] 
+        },
+        { 
+          name: 'INFINITE 1Gbps', 
+          price: 1120999, 
+          features: [
+            'Kecepatan 1Gbps',
+            'Upload 500Mbps',
+            'Unlimited device',
+            'Enterprise grade equipment',
+            'Premium instalasi + setup',
+            'VIP support 24/7',
+            'SLA 99.9%'
+          ] 
+        }
+      ],
+      related: ['wifi', 'cctv'],
+      benefits: [
+        'Jaringan fiber optic berkecepatan tinggi',
+        'Instalasi oleh teknisi berpengalaman',
+        'Garansi perangkat 1 tahun',
+        'Support teknis 24/7',
+        'Upgrade paket kapan saja',
+        'Tidak ada kuota limit'
+      ],
+      terms_conditions: 'Minimum kontrak 12 bulan. Biaya pemasangan dapat dikenakan untuk area tertentu. Pembatalan sebelum masa kontrak dikenakan biaya penalti.',
+      form_fields: [
+        { name: 'installation_address', label: 'Alamat Instalasi', type: 'textarea', required: true },
+        { name: 'contact_person', label: 'Nama Penanggung Jawab', type: 'text', required: true },
+        { name: 'contact_phone', label: 'Nomor Telepon', type: 'text', required: true },
+        { name: 'preferred_date', label: 'Tanggal Instalasi yang Diinginkan', type: 'date', required: false },
+        { name: 'additional_requests', label: 'Permintaan Tambahan', type: 'textarea', required: false }
+      ]
     }
   ];
 }

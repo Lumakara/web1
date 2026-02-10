@@ -7,13 +7,21 @@ class AudioService {
   private bgMusic: HTMLAudioElement | null = null;
   private isInitialized = false;
 
-  // Sound URLs - using reliable CDN sources
+  // Sound URLs - using reliable CDN sources from Mixkit
   private readonly SOUNDS = {
     click: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
     success: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
     error: 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3',
     notification: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
     hover: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+    swipe: 'https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3',
+    pop: 'https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3',
+    toggle: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
+    tab: 'https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3',
+    type: 'https://assets.mixkit.co/active_storage/sfx/2547/2547-preview.mp3',
+    achievement: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+    whoosh: 'https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3',
+    tick: 'https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3',
   };
 
   private readonly MUSIC = {
@@ -50,7 +58,8 @@ class AudioService {
     }
   }
 
-  playClick() {
+  playClick(soundEnabled = true) {
+    if (!soundEnabled) return;
     if (!this.isInitialized) this.initialize();
     if (this.clickSound) {
       this.clickSound.currentTime = 0;
@@ -58,7 +67,8 @@ class AudioService {
     }
   }
 
-  playSuccess() {
+  playSuccess(soundEnabled = true) {
+    if (!soundEnabled) return;
     if (!this.isInitialized) this.initialize();
     if (this.successSound) {
       this.successSound.currentTime = 0;
@@ -66,7 +76,8 @@ class AudioService {
     }
   }
 
-  playError() {
+  playError(soundEnabled = true) {
+    if (!soundEnabled) return;
     if (!this.isInitialized) this.initialize();
     if (this.errorSound) {
       this.errorSound.currentTime = 0;
@@ -74,18 +85,124 @@ class AudioService {
     }
   }
 
-  playNotification() {
+  playNotification(soundEnabled = true) {
+    if (!soundEnabled) return;
     if (!this.isInitialized) this.initialize();
-    const notificationSound = new Audio(this.SOUNDS.notification);
-    notificationSound.volume = 0.4;
-    notificationSound.play().catch(() => {});
+    try {
+      const notificationSound = new Audio(this.SOUNDS.notification);
+      notificationSound.volume = 0.4;
+      notificationSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play notification sound:', error);
+    }
   }
 
-  playHover() {
+  playHover(soundEnabled = true) {
+    if (!soundEnabled) return;
     if (!this.isInitialized) this.initialize();
-    const hoverSound = new Audio(this.SOUNDS.hover);
-    hoverSound.volume = 0.1;
-    hoverSound.play().catch(() => {});
+    try {
+      const hoverSound = new Audio(this.SOUNDS.hover);
+      hoverSound.volume = 0.1;
+      hoverSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play hover sound:', error);
+    }
+  }
+
+  playSwipe(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const swipeSound = new Audio(this.SOUNDS.swipe);
+      swipeSound.volume = 0.2;
+      swipeSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play swipe sound:', error);
+    }
+  }
+
+  playPop(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const popSound = new Audio(this.SOUNDS.pop);
+      popSound.volume = 0.3;
+      popSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play pop sound:', error);
+    }
+  }
+
+  playToggle(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const toggleSound = new Audio(this.SOUNDS.toggle);
+      toggleSound.volume = 0.2;
+      toggleSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play toggle sound:', error);
+    }
+  }
+
+  playTab(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const tabSound = new Audio(this.SOUNDS.tab);
+      tabSound.volume = 0.15;
+      tabSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play tab sound:', error);
+    }
+  }
+
+  playType(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const typeSound = new Audio(this.SOUNDS.type);
+      typeSound.volume = 0.1;
+      typeSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play type sound:', error);
+    }
+  }
+
+  playAchievement(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const achievementSound = new Audio(this.SOUNDS.achievement);
+      achievementSound.volume = 0.5;
+      achievementSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play achievement sound:', error);
+    }
+  }
+
+  playWhoosh(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const whooshSound = new Audio(this.SOUNDS.whoosh);
+      whooshSound.volume = 0.3;
+      whooshSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play whoosh sound:', error);
+    }
+  }
+
+  playTick(soundEnabled = true) {
+    if (!soundEnabled) return;
+    if (!this.isInitialized) this.initialize();
+    try {
+      const tickSound = new Audio(this.SOUNDS.tick);
+      tickSound.volume = 0.2;
+      tickSound.play().catch(() => {});
+    } catch (error) {
+      console.error('Failed to play tick sound:', error);
+    }
   }
 
   playWelcomeMusic() {
