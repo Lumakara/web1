@@ -292,7 +292,7 @@ CREATE INDEX idx_pterodactyl_status ON pterodactyl_servers(status);
 CREATE INDEX idx_pterodactyl_server_id ON pterodactyl_servers(server_id);
 ```
 
-### 3.6 WiFi Installations Table
+### 3.6 WiFi Installations Table (SAMPE SINI)
 
 ```sql
 -- WiFi installations table
