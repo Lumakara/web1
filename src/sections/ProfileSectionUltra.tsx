@@ -14,6 +14,7 @@ import {
   X,
   CreditCard,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -580,9 +581,41 @@ function OrdersSkeleton({ isDarkMode }: { isDarkMode: boolean }) {
   );
 }
 
+// Loading State for Auth Check
+function AuthLoadingState({ isDarkMode }: { isDarkMode: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center min-h-[60vh] px-4"
+    >
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        className={cn(
+          'w-16 h-16 rounded-full flex items-center justify-center mb-4',
+          isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+        )}
+      >
+        <Loader2 className={cn(
+          'h-8 w-8',
+          isDarkMode ? 'text-blue-400' : 'text-blue-600'
+        )} />
+      </motion.div>
+      <p className={cn(
+        'text-sm',
+        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+      )}>
+        Memuat...
+      </p>
+    </motion.div>
+  );
+}
+
 // Main Profile Section Component
 export function ProfileSectionUltra() {
   const { user, profile, isAuthenticated, isDarkMode } = useAppStore();
+  const { isInitialized } = useAuth();
   const { signOut } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -628,6 +661,14 @@ export function ProfileSectionUltra() {
     (o) => o.status === 'pending' || o.status === 'processing'
   ).length;
 
+  // Show loading state while auth is not yet initialized
+  // The AuthProvider in App.tsx handles the actual auth initialization
+  // We wait until isInitialized is true before showing any auth-related UI
+  if (!isInitialized) {
+    return <AuthLoadingState isDarkMode={isDarkMode} />;
+  }
+
+  // Show not logged in state only when auth is initialized and user is not authenticated
   if (!isAuthenticated) {
     return (
       <motion.div

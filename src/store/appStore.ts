@@ -25,8 +25,6 @@ export interface Review {
   createdAt: string;
 }
 
-export type ThemeType = 'default' | 'ocean' | 'sunset' | 'forest' | 'dark';
-
 export type AnimationType = 'v1' | 'v2' | 'v3' | 'off';
 
 export type EffectType = 'v1' | 'v2' | 'v3' | 'off';
@@ -79,8 +77,6 @@ interface AppState {
   addRecentlyViewed: (productId: string) => void;
 
   // Theme Settings
-  theme: ThemeType;
-  setTheme: (theme: ThemeType) => void;
   isDarkMode: boolean;
   toggleDarkMode: () => void;
 
@@ -211,8 +207,6 @@ export const useAppStore = create<AppState>()(
       },
 
       // Theme Settings
-      theme: 'default',
-      setTheme: (theme) => set({ theme }),
       isDarkMode: false,
       toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
 
@@ -242,7 +236,6 @@ export const useAppStore = create<AppState>()(
         cart: state.cart,
         recentlyViewed: state.recentlyViewed,
         orders: state.orders,
-        theme: state.theme,
         isDarkMode: state.isDarkMode,
         soundEnabled: state.soundEnabled,
         musicEnabled: state.musicEnabled,

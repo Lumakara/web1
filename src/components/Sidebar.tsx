@@ -1,23 +1,15 @@
-import { X, Home, ShoppingBag, User, Headphones, LogOut, Shield, Moon, Sun, Volume2, VolumeX, Music } from 'lucide-react';
+import { X, Home, ShoppingBag, User, Headphones, LogOut, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Switch } from '@/components/ui/switch';
+
 import { useAppStore } from '@/store/appStore';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
-import { audioService } from '@/lib/audio';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const themes = [
-  { id: 'default', name: 'Default', gradient: 'from-blue-600 to-orange-500' },
-  { id: 'ocean', name: 'Ocean', gradient: 'from-blue-500 to-cyan-400' },
-  { id: 'sunset', name: 'Sunset', gradient: 'from-orange-500 to-pink-500' },
-  { id: 'forest', name: 'Forest', gradient: 'from-green-500 to-emerald-400' },
-];
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { 
@@ -25,27 +17,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     profile, 
     isAuthenticated, 
     isDarkMode, 
-    toggleDarkMode, 
-    soundEnabled, 
-    toggleSound,
-    musicEnabled,
-    toggleMusic,
-    theme,
-    setTheme,
   } = useAppStore();
   
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    if (soundEnabled) audioService.playClick();
     await signOut();
     onClose();
     navigate('/');
   };
 
   const handleNavClick = () => {
-    if (soundEnabled) audioService.playClick();
     onClose();
   };
 
@@ -136,58 +119,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <span>Admin Dashboard</span>
           </a>
         </nav>
-
-        {/* Settings Section */}
-        <div className={`p-4 border-t ${borderClass}`}>
-          <p className={`text-xs font-medium uppercase tracking-wider mb-3 ${subTextClass}`}>Pengaturan</p>
-          
-          {/* Dark Mode Toggle */}
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              {isDarkMode ? <Moon className="h-5 w-5 text-gray-400" /> : <Sun className="h-5 w-5 text-gray-500" />}
-              <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Mode Gelap</span>
-            </div>
-            <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
-          </div>
-
-          {/* Sound Toggle */}
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              {soundEnabled ? <Volume2 className="h-5 w-5 text-gray-400" /> : <VolumeX className="h-5 w-5 text-gray-500" />}
-              <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Efek Suara</span>
-            </div>
-            <Switch checked={soundEnabled} onCheckedChange={toggleSound} />
-          </div>
-
-          {/* Music Toggle */}
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              <Music className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>Musik Latar</span>
-            </div>
-            <Switch checked={musicEnabled} onCheckedChange={toggleMusic} />
-          </div>
-        </div>
-
-        {/* Theme Selector */}
-        <div className={`px-4 pb-4 border-t ${borderClass} pt-4`}>
-          <p className={`text-xs font-medium uppercase tracking-wider mb-3 ${subTextClass}`}>Tema Warna</p>
-          <div className="flex gap-2">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setTheme(t.id as any);
-                  if (soundEnabled) audioService.playClick();
-                }}
-                className={`w-8 h-8 rounded-full bg-gradient-to-r ${t.gradient} ${
-                  theme === t.id ? 'ring-2 ring-offset-2 ring-blue-500' : ''
-                }`}
-                title={t.name}
-              />
-            ))}
-          </div>
-        </div>
 
         {/* Footer */}
         <div className={`absolute bottom-0 left-0 right-0 p-4 border-t ${borderClass} ${bgClass}`}>

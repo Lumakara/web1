@@ -9,8 +9,6 @@ import {
   X,
   Bot,
   User,
-  Paperclip,
-  Smile,
   PhoneCall,
   Clock,
   Star,
@@ -20,12 +18,11 @@ import {
   Sparkles,
   Zap,
   Headphones,
-  Image as ImageIcon,
   RotateCcw,
   ShoppingCart,
-  ExternalLink,
   CheckCircle2,
-  Info
+  Info,
+  Paperclip,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -391,136 +388,26 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
   );
 }
 
-// ============================================================================
-// Product Card in Chat
-// ============================================================================
-interface ProductCardChatProps {
-  product: ProductCardData;
-  onView: () => void;
-  onAddToCart: () => void;
-}
 
-function ProductCardChat({ product, onView, onAddToCart }: ProductCardChatProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
-    >
-      <div className="relative h-32 overflow-hidden">
-        <img
-          src={product.image}
-          alt={product.title}
-          className="h-full w-full object-cover"
-        />
-        {product.originalPrice && (
-          <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
-            Promo
-          </div>
-        )}
-        <div className="absolute bottom-2 right-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-medium dark:bg-gray-900/90">
-          ⭐ {product.rating}
-        </div>
-      </div>
-
-      <div className="p-3">
-        <h4 className="mb-1 font-semibold text-gray-900 dark:text-white line-clamp-1">
-          {product.title}
-        </h4>
-        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-          {product.description}
-        </p>
-
-        <div className="mb-3 flex items-center gap-2">
-          <span className="font-bold text-blue-600 dark:text-blue-400">
-            {formatPrice(product.price)}
-          </span>
-          {product.originalPrice && (
-            <span className="text-xs text-gray-400 line-through">
-              {formatPrice(product.originalPrice)}
-            </span>
-          )}
-        </div>
-
-        {product.tiers && product.tiers.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1">
-            {product.tiers.slice(0, 2).map((tier) => (
-              <span
-                key={tier.name}
-                className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-              >
-                {tier.name}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 text-xs"
-            onClick={onView}
-          >
-            <ExternalLink className="mr-1 h-3 w-3" />
-            Lihat
-          </Button>
-          <Button
-            size="sm"
-            className="flex-1 bg-gradient-to-r from-blue-600 to-orange-500 text-xs"
-            onClick={onAddToCart}
-          >
-            <ShoppingCart className="mr-1 h-3 w-3" />
-            Beli
-          </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 // ============================================================================
-// Typing Indicator
-// ============================================================================
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1 px-4 py-3">
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0 }}
-        className="h-2 w-2 rounded-full bg-gray-400"
-      />
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0.15 }}
-        className="h-2 w-2 rounded-full bg-gray-400"
-      />
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 0.5, repeat: Infinity, delay: 0.3 }}
-        className="h-2 w-2 rounded-full bg-gray-400"
-      />
-    </div>
-  );
-}
-
-// ============================================================================
-// Kimi AI Chat Interface
+// Kimi AI Chat Interface - Floating Widget
 // ============================================================================
 interface KimiChatInterfaceProps {
-  isOpen: boolean;
-  onClose: () => void;
   products: Product[];
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
 }
 
-function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps) {
+function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessageUI[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `${getTimeBasedGreeting()}! 👋 Saya Kimi Assistant, AI Customer Service yang **ULTRA SUPER PINTAR**! \n\nSaya bisa membantu Anda dengan:\n• 📦 Informasi produk & harga\n• 🔍 Rekomendasi layanan\n• 📊 Cek status pesanan\n• 💬 Jawaban cepat FAQ\n• 🎫 Buat tiket support\n\nAda yang bisa saya bantu?`,
+      content: `${getTimeBasedGreeting()}! 👋 Saya Kimi Assistant.\n\nSaya bisa bantu:\n• Info produk & harga\n• Rekomendasi layanan\n• Jawaban cepat\n\nAda yang bisa saya bantu?`,
       timestamp: Date.now(),
-      suggestions: ['Lihat produk', 'Cek pesanan', 'Buat tiket'],
+      suggestions: ['Lihat produk', 'Paket WiFi', 'CCTV'],
     },
   ]);
   const [input, setInput] = useState('');
@@ -535,14 +422,11 @@ function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingText, scrollToBottom]);
-
-  useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 300);
+    if (isOpen) {
+      scrollToBottom();
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isOpen, messages, streamingText, scrollToBottom]);
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || isTyping) return;
@@ -559,21 +443,14 @@ function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps
     setIsTyping(true);
 
     try {
-      // Stream the response
       await KimiAIService.streamMessage(
         [{ role: 'user', content: input }],
-        (_chunk, full) => {
-          setStreamingText(full);
-        },
-        {
-          context: { products },
-          temperature: 0.7,
-        }
+        (_chunk, full) => setStreamingText(full),
+        { context: { products }, temperature: 0.7 }
       );
 
       setStreamingText('');
 
-      // Get full response
       const response: ChatResponse = await KimiAIService.sendMessageWithContext(
         [{ role: 'user', content: input }],
         products,
@@ -581,28 +458,23 @@ function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps
         { temperature: 0.7 }
       );
 
-      const assistantMessage: ChatMessageUI = {
+      setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response.message,
         timestamp: Date.now(),
         productCards: response.productCards,
-        suggestions: response.suggestions,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+        suggestions: response.suggestions?.slice(0, 3),
+      }]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: 'Maaf, terjadi kesalahan. Silakan coba lagi atau hubungi tim support kami.',
-          timestamp: Date.now(),
-          suggestions: ['Coba lagi', 'Hubungi support'],
-        },
-      ]);
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+        timestamp: Date.now(),
+        suggestions: ['Coba lagi'],
+      }]);
     } finally {
       setIsTyping(false);
       setStreamingText('');
@@ -611,10 +483,7 @@ function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps
 
   const handleQuickReply = useCallback((suggestion: string) => {
     setInput(suggestion);
-    // Auto send after short delay
-    setTimeout(() => {
-      handleSend();
-    }, 100);
+    setTimeout(() => handleSend(), 100);
   }, [handleSend]);
 
   const handleAddToCart = useCallback((product: ProductCardData) => {
@@ -636,259 +505,228 @@ function KimiChatInterface({ isOpen, onClose, products }: KimiChatInterfaceProps
     }
   };
 
+  const handleReset = () => {
+    setMessages([{
+      id: 'welcome',
+      role: 'assistant',
+      content: `${getTimeBasedGreeting()}! 👋 Ada yang bisa saya bantu?`,
+      timestamp: Date.now(),
+      suggestions: ['Lihat produk', 'Paket WiFi', 'CCTV'],
+    }]);
+    KimiAIService.clearHistory();
+  };
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex flex-col bg-white dark:bg-gray-900"
-        >
-          {/* Chat Header */}
-          <motion.div
-            initial={{ y: -50 }}
-            animate={{ y: 0 }}
-            className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+    <>
+      {/* Floating Chat Button */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={onOpen}
+            className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30"
           >
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                  <Bot className="h-6 w-6" />
-                </div>
-                <motion.span
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-green-500 dark:border-gray-900"
-                />
-              </div>
-              <div>
-                <h2 className="font-semibold text-gray-900 dark:text-white">
-                  Kimi AI Assistant
-                </h2>
-                <div className="flex items-center gap-1 text-xs text-green-600">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
-                  </span>
-                  <span>Online - Ultra Super Pintar</span>
-                </div>
-              </div>
-            </div>
+            <Bot className="h-6 w-6" />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-4 w-4 rounded-full bg-green-500" />
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setMessages([
-                    {
-                      id: 'welcome',
-                      role: 'assistant',
-                      content: `${getTimeBasedGreeting()}! 👋 Saya Kimi Assistant! Ada yang bisa saya bantu?`,
-                      timestamp: Date.now(),
-                      suggestions: ['Lihat produk', 'Cek pesanan', 'Buat tiket'],
-                    },
-                  ]);
-                  KimiAIService.clearHistory();
-                }}
-              >
-                <RotateCcw className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 px-4 py-4">
-            <div className="space-y-4">
-              {messages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`flex ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
+      {/* Chat Window */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed bottom-20 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+            style={{ maxHeight: 'min(600px, calc(100vh - 7rem))', height: '500px' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-white">Kimi AI</h3>
+                  <div className="flex items-center gap-1 text-[10px] text-white/80">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-300" />
+                    Online
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleReset}
+                  className="h-8 w-8 text-white/80 hover:bg-white/20 hover:text-white"
                 >
-                  <div
-                    className={`flex max-w-[85%] gap-2 ${
-                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div
-                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
-                        message.role === 'user'
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
-                      }`}
-                    >
-                      {message.role === 'user' ? (
-                        <User className="h-4 w-4" />
-                      ) : (
-                        <Bot className="h-4 w-4" />
-                      )}
-                    </div>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 text-white/80 hover:bg-white/20 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-                    {/* Message Content */}
-                    <div className="space-y-2">
-                      <div
-                        className={`rounded-2xl px-4 py-3 text-sm ${
+            {/* Messages */}
+            <ScrollArea className="flex-1 px-3 py-3">
+              <div className="space-y-3">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`flex max-w-[90%] gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] ${
+                        message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
+                      }`}>
+                        {message.role === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className={`rounded-2xl px-3 py-2 text-xs ${
                           message.role === 'user'
                             ? 'bg-blue-600 text-white rounded-br-md'
                             : 'bg-gray-100 text-gray-800 rounded-bl-md dark:bg-gray-800 dark:text-gray-200'
-                        }`}
-                      >
-                        <div className="whitespace-pre-wrap">{message.content}</div>
-                      </div>
-
-                      {/* Product Cards */}
-                      {message.productCards && message.productCards.length > 0 && (
-                        <div className="grid gap-2">
-                          {message.productCards.map((product) => (
-                            <ProductCardChat
-                              key={product.id}
-                              product={product}
-                              onView={() => {
-                                setNotification({
-                                  message: `Melihat detail ${product.title}`,
-                                  type: 'info',
-                                });
-                              }}
-                              onAddToCart={() => handleAddToCart(product)}
-                            />
-                          ))}
+                        }`}>
+                          <div className="whitespace-pre-wrap">{message.content}</div>
                         </div>
-                      )}
 
-                      {/* Quick Reply Suggestions */}
-                      {message.suggestions && message.suggestions.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {message.suggestions.map((suggestion) => (
-                            <motion.button
-                              key={suggestion}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handleQuickReply(suggestion)}
-                              className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                            >
-                              {suggestion}
-                            </motion.button>
-                          ))}
-                        </div>
-                      )}
+                        {/* Product Cards */}
+                        {message.productCards && message.productCards.length > 0 && (
+                          <div className="grid gap-2">
+                            {message.productCards.slice(0, 2).map((product) => (
+                              <motion.div
+                                key={product.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="overflow-hidden rounded-lg border border-gray-200 bg-white text-xs dark:border-gray-700 dark:bg-gray-800"
+                              >
+                                <div className="relative h-20 overflow-hidden">
+                                  <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
+                                  {product.originalPrice && (
+                                    <span className="absolute left-1.5 top-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] text-white">Promo</span>
+                                  )}
+                                </div>
+                                <div className="p-2">
+                                  <h4 className="mb-0.5 font-medium line-clamp-1">{product.title}</h4>
+                                  <p className="mb-1.5 text-[10px] text-gray-500 line-clamp-1">{product.description}</p>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-blue-600">{formatPrice(product.price)}</span>
+                                    <Button
+                                      size="sm"
+                                      className="h-6 bg-gradient-to-r from-blue-600 to-orange-500 px-2 text-[10px]"
+                                      onClick={() => handleAddToCart(product)}
+                                    >
+                                      <ShoppingCart className="mr-1 h-3 w-3" />
+                                      Beli
+                                    </Button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
 
-                      {/* Timestamp */}
-                      <div
-                        className={`text-[10px] text-gray-400 ${
-                          message.role === 'user' ? 'text-right' : 'text-left'
-                        }`}
-                      >
-                        {new Date(message.timestamp).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {/* Suggestions */}
+                        {message.suggestions && message.suggestions.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {message.suggestions.map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                onClick={() => handleQuickReply(suggestion)}
+                                className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <span className="block text-[9px] text-gray-400">
+                          {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
                       </div>
                     </div>
                   </div>
-                </motion.div>
-              ))}
+                ))}
 
-              {/* Streaming Text */}
-              {streamingText && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="flex max-w-[85%] gap-2">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                      <Bot className="h-4 w-4" />
-                    </div>
-                    <div className="rounded-2xl rounded-bl-md bg-gray-100 px-4 py-3 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                      {streamingText}
-                      <span className="inline-block h-4 w-1 animate-pulse bg-gray-400" />
+                {/* Streaming */}
+                {streamingText && (
+                  <div className="flex justify-start">
+                    <div className="flex max-w-[90%] gap-2">
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                        <Bot className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3 py-2 text-xs dark:bg-gray-800">
+                        {streamingText}
+                        <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-gray-400" />
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                )}
 
-              {/* Typing Indicator */}
-              {isTyping && !streamingText && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-start"
-                >
-                  <div className="flex max-w-[85%] gap-2">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                      <Bot className="h-4 w-4" />
-                    </div>
-                    <div className="rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-800">
-                      <TypingIndicator />
+                {/* Typing */}
+                {isTyping && !streamingText && (
+                  <div className="flex justify-start">
+                    <div className="flex max-w-[90%] gap-2">
+                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                        <Bot className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3 py-2 dark:bg-gray-800">
+                        <div className="flex gap-1">
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.1 }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.2 }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </motion.div>
-              )}
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
 
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <motion.div
-            initial={{ y: 50 }}
-            animate={{ y: 0 }}
-            className="border-t border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
-          >
-            <div className="flex items-end gap-2">
-              <Button variant="ghost" size="icon" className="flex-shrink-0">
-                <Paperclip className="h-5 w-5 text-gray-500" />
-              </Button>
-              <Button variant="ghost" size="icon" className="flex-shrink-0">
-                <ImageIcon className="h-5 w-5 text-gray-500" />
-              </Button>
-              <div className="relative flex-1">
+            {/* Input */}
+            <div className="border-t border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center gap-2">
                 <Input
                   ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ketik pesan Anda..."
-                  className="pr-10"
+                  placeholder="Ketik pesan..."
                   disabled={isTyping}
+                  className="h-9 flex-1 bg-white text-xs dark:bg-gray-800"
                 />
                 <Button
-                  variant="ghost"
+                  onClick={handleSend}
+                  disabled={!input.trim() || isTyping}
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2"
+                  className="h-9 w-9 flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600"
                 >
-                  <Smile className="h-5 w-5 text-gray-500" />
+                  {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isTyping}
-                className="flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600"
-              >
-                {isTyping ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Send className="h-5 w-5" />
-                )}
-              </Button>
             </div>
-            <p className="mt-2 text-center text-[10px] text-gray-400">
-              Powered by Kimi AI • Response otomatis dalam detik
-            </p>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -1459,11 +1297,12 @@ export function SupportSectionUltra() {
         </motion.div>
       </div>
 
-      {/* Kimi AI Chat Interface */}
+      {/* Kimi AI Chat Interface - Floating Widget */}
       <KimiChatInterface
-        isOpen={chatOpen}
-        onClose={() => setChatOpen(false)}
         products={products}
+        isOpen={chatOpen}
+        onOpen={() => setChatOpen(true)}
+        onClose={() => setChatOpen(false)}
       />
 
       {/* Ticket Form Modal */}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback, useContext, createContext } from 'react';
 import { AuthService } from '@/lib/supabase-auth';
 import { UserService } from '@/lib/supabase';
 import { useAppStore } from '@/store/appStore';
@@ -7,109 +7,24 @@ import { toast } from 'sonner';
 import type { AuthUser } from '@/lib/firebase';
 import type { UserProfile } from '@/lib/supabase';
 
+// Context to track auth initialization state from AuthProvider
+interface AuthContextType {
+  isInitialized: boolean;
+}
+
+export const AuthContext = createContext<AuthContextType>({ isInitialized: false });
+
 export const useAuth = () => {
   const { user, setUser, setProfile, logout, isAuthenticated } = useAppStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Get initialization state from context (provided by AuthProvider in App.tsx)
+  // If context is not available, fall back to checking if auth state has been determined
+  const authContext = useContext(AuthContext);
+  const isInitialized = authContext?.isInitialized ?? (isAuthenticated || user === null);
 
-  // Initialize auth state on mount
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Check for existing session
-        const response = await AuthService.getSession();
-        const session = response.data;
-        
-        if (session?.user) {
-          const metadata = session.user.user_metadata || {};
-          const authUser: AuthUser = {
-            uid: session.user.id,
-            email: session.user.email || '',
-            displayName: (metadata.full_name as string) || session.user.email?.split('@')[0] || 'User',
-            photoURL: (metadata.avatar_url as string) || null,
-            phoneNumber: (metadata.phone as string) || null,
-          };
-          setUser(authUser);
-
-          // Fetch user profile
-          try {
-            const profile = await UserService.getProfile(session.user.id);
-            if (profile) {
-              setProfile(profile);
-            } else {
-              // Create profile if doesn't exist
-              const newProfile: UserProfile = {
-                id: session.user.id,
-                email: session.user.email || '',
-                full_name: authUser.displayName || '',
-                avatar_url: authUser.photoURL || undefined,
-              };
-              await UserService.createProfile(newProfile);
-              setProfile(newProfile);
-            }
-          } catch (error) {
-            console.error('Error fetching/creating profile:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setIsLoading(false);
-        setIsInitialized(true);
-      }
-    };
-
-    initializeAuth();
-
-    // Subscribe to auth state changes
-    const { unsubscribe } = AuthService.onAuthStateChange(async (event: string, session: any) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const metadata = session.user.user_metadata || {};
-        const authUser: AuthUser = {
-          uid: session.user.id,
-          email: session.user.email || '',
-          displayName: (metadata.full_name as string) || session.user.email?.split('@')[0] || 'User',
-          photoURL: (metadata.avatar_url as string) || null,
-          phoneNumber: (metadata.phone as string) || null,
-        };
-        setUser(authUser);
-
-        // Fetch or create profile
-        try {
-          let profile = await UserService.getProfile(session.user.id);
-          if (!profile) {
-            const newProfile: UserProfile = {
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: authUser.displayName || '',
-              avatar_url: authUser.photoURL || undefined,
-            };
-            await UserService.createProfile(newProfile);
-            profile = newProfile;
-          }
-          setProfile(profile);
-        } catch (error) {
-          console.error('Error syncing profile:', error);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        logout();
-      } else if (event === 'USER_UPDATED' && session?.user) {
-        const metadata = session.user.user_metadata || {};
-        const authUser: AuthUser = {
-          uid: session.user.id,
-          email: session.user.email || '',
-          displayName: (metadata.full_name as string) || session.user.email?.split('@')[0] || 'User',
-          photoURL: (metadata.avatar_url as string) || null,
-          phoneNumber: (metadata.phone as string) || null,
-        };
-        setUser(authUser);
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [setUser, setProfile, logout]);
+  // The auth state is now initialized by AuthProvider in App.tsx
+  // This hook provides additional auth operations
 
   const signInWithGoogle = useCallback(async () => {
     try {
@@ -125,34 +40,60 @@ export const useAuth = () => {
     }
   }, []);
 
+  const signInWithGitHub = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await AuthService.signInWithOAuth('github');
+      if (response.error) throw response.error;
+      // OAuth redirect will handle the rest
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal masuk dengan GitHub');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const signInWithFacebook = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await AuthService.signInWithOAuth('facebook');
+      if (response.error) throw response.error;
+      // OAuth redirect will handle the rest
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal masuk dengan Facebook');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     try {
       setIsLoading(true);
       const response = await AuthService.signIn(email, password);
-      const data = response.data;
-      const error = response.error;
       
-      if (error) {
+      if (response.error) {
         // Send failed login notification to owner
         await EmailService.sendAdminNotification('failed_login', {
           type: 'failed_login',
           user_email: email,
           ip_address: 'unknown',
           device_info: navigator.userAgent,
-          failure_reason: error.message,
+          failure_reason: response.error.message,
           timestamp: new Date().toISOString(),
         });
-        throw error;
+        throw response.error;
       }
 
-      if (data) {
-        const metadata = data.user_metadata || {};
+      if (response.data) {
+        const data = response.data;
         const authUser: AuthUser = {
           uid: data.id,
           email: data.email || '',
-          displayName: (metadata.full_name as string) || data.email?.split('@')[0] || 'User',
-          photoURL: (metadata.avatar_url as string) || null,
-          phoneNumber: (metadata.phone as string) || null,
+          displayName: data.full_name || data.email?.split('@')[0] || 'User',
+          photoURL: data.avatar_url || null,
+          phoneNumber: data.user_metadata?.phone as string || null,
         };
         setUser(authUser);
 
@@ -182,7 +123,7 @@ export const useAuth = () => {
         toast.success('Berhasil masuk!');
       }
       
-      return data;
+      return response.data;
     } catch (error: any) {
       toast.error(error.message || 'Gagal masuk');
       throw error;
@@ -198,21 +139,20 @@ export const useAuth = () => {
         full_name: displayName,
         phone: phone || '',
       });
-      const data = response.data;
-      const error = response.error;
       
-      if (error) {
+      if (response.error) {
         // Send failed registration notification
         await EmailService.sendAdminNotification('failed_login', {
           type: 'failed_login',
           user_email: email,
-          failure_reason: error.message,
+          failure_reason: response.error.message,
           timestamp: new Date().toISOString(),
         });
-        throw error;
+        throw response.error;
       }
 
-      if (data) {
+      if (response.data) {
+        const data = response.data;
         const authUser: AuthUser = {
           uid: data.id,
           email: data.email || '',
@@ -250,7 +190,7 @@ export const useAuth = () => {
         toast.success('Akun berhasil dibuat! Silakan verifikasi email Anda.');
       }
       
-      return data;
+      return response.data;
     } catch (error: any) {
       toast.error(error.message || 'Gagal mendaftar');
       throw error;
@@ -350,6 +290,8 @@ export const useAuth = () => {
     isLoading,
     isInitialized,
     signInWithGoogle,
+    signInWithGitHub,
+    signInWithFacebook,
     signInWithEmail,
     registerWithEmail,
     signOut,

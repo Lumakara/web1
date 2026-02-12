@@ -3,7 +3,7 @@
  * 
  * Production-ready authentication service with:
  * - Email/password authentication
- * - OAuth providers (Google, GitHub)
+ * - OAuth providers (Google, GitHub, Facebook)
  * - Profile management
  * - Email notifications integration
  * - Comprehensive error handling
@@ -74,7 +74,7 @@ export interface ProfileUpdateData {
 /**
  * OAuth provider types
  */
-export type OAuthProvider = 'google' | 'github' | 'gitlab' | 'azure';
+export type OAuthProvider = 'google' | 'github' | 'gitlab' | 'azure' | 'facebook';
 
 /**
  * Auth state change callback type
@@ -384,7 +384,7 @@ export const AuthService = {
   },
 
   /**
-   * Sign in with OAuth provider (Google, GitHub)
+   * Sign in with OAuth provider (Google, GitHub, Facebook)
    * 
    * @param provider - OAuth provider name
    * @returns Redirects to OAuth provider

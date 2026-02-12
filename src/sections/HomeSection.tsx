@@ -1,36 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Star, ChevronRight, Sparkles, Zap, Headphones, Palette, Wrench, Code, Video, Globe, Cpu, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search, Star, Zap, Headphones, Palette, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppStore } from '@/store/appStore';
 import { audioService } from '@/lib/audio';
 import { ProductModalUltra } from '@/components/ProductModalUltra';
 import type { Product } from '@/lib/supabase';
-
-// 8 Categories with icons (used in filter sheet only)
-const categories = [
-  { id: 'all', label: 'Semua', icon: Sparkles },
-  { id: 'installation', label: 'Instalasi', icon: Wrench },
-  { id: 'creative', label: 'Kreatif', icon: Palette },
-  { id: 'technical', label: 'Teknis', icon: Code },
-  { id: 'network', label: 'Jaringan', icon: Globe },
-  { id: 'security', label: 'Keamanan', icon: Shield },
-  { id: 'hardware', label: 'Hardware', icon: Cpu },
-  { id: 'multimedia', label: 'Multimedia', icon: Video },
-];
-
-// Promo types for notifications
-const promoTypes = [
-  { type: 'trending', label: '🔥 Trending', color: 'from-orange-500 to-red-500' },
-  { type: 'cheap', label: '💰 Termurah', color: 'from-green-500 to-emerald-500' },
-  { type: 'new', label: '✨ Baru', color: 'from-blue-500 to-purple-500' },
-  { type: 'bestseller', label: '⭐ Best Seller', color: 'from-yellow-500 to-amber-500' },
-];
 
 // Animation variants
 const containerVariants = {
@@ -99,43 +76,18 @@ const pulseVariants = {
 export function HomeSection() {
   const { products, isLoading } = useProducts();
   const { addToCart, cart, addRecentlyViewed, isDarkMode } = useAppStore();
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [showPromoModal, setShowPromoModal] = useState(false);
-  const [currentPromo, setCurrentPromo] = useState<typeof promoTypes[0] | null>(null);
 
-  // Filter products based on category and search query
+  // Filter products based on search query only
   const filteredProducts = products.filter((product) => {
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     const matchesSearch = searchQuery === '' || 
       product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
-
-  // Get trending/cheap products
-  const getPromoProducts = (type: string) => {
-    switch (type) {
-      case 'trending':
-        return [...products].sort((a, b) => b.reviews - a.reviews).slice(0, 5);
-      case 'cheap':
-        return [...products].sort((a, b) => (a.discount_price || a.base_price) - (b.discount_price || b.base_price)).slice(0, 5);
-      case 'new':
-        return [...products].slice(0, 5);
-      case 'bestseller':
-        return [...products].sort((a, b) => b.rating - a.rating).slice(0, 5);
-      default:
-        return [];
-    }
-  };
-
-  const handleCategoryClick = (catId: string) => {
-    audioService.playClick();
-    setSelectedCategory(catId);
-  };
 
   const handleProductClick = (product: Product) => {
     audioService.playClick();
@@ -147,12 +99,6 @@ export function HomeSection() {
   const handleAddToCart = (product: Product, tier: string) => {
     addToCart(product, tier);
     setShowProductModal(false);
-  };
-
-  const handlePromoClick = (promo: typeof promoTypes[0]) => {
-    audioService.playClick();
-    setCurrentPromo(promo);
-    setShowPromoModal(true);
   };
 
   const isInCart = (productId: string, tierName: string) => {
@@ -174,130 +120,21 @@ export function HomeSection() {
       {/* Hero Banner */}
       <HeroBanner />
 
-      {/* Promo Badges */}
-      <motion.div 
-        className="px-4 py-3"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          {promoTypes.map((promo, index) => (
-            <motion.button
-              key={promo.type}
-              onClick={() => handlePromoClick(promo)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium text-white bg-gradient-to-r ${promo.color} shadow-lg`}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * index, duration: 0.4 }}
-              whileHover={{ 
-                scale: 1.05, 
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {promo.label}
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Search & Filter */}
+      {/* Search */}
       <motion.div 
         className={`sticky top-[60px] z-30 px-4 py-3 transition-all duration-500 ${isDarkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm shadow-sm`}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.5 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <div className="flex gap-2">
-          <motion.div 
-            className="relative flex-1"
-            whileFocus={{ scale: 1.01 }}
-          >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Cari layanan..."
-              className={`pl-9 transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white focus:border-primary' : 'focus:border-primary'}`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </motion.div>
-          <Sheet>
-            <SheetTrigger asChild>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => audioService.playClick()}
-                  className={`transition-all duration-300 ${isDarkMode ? 'border-gray-700 bg-gray-800 hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                >
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </motion.div>
-            </SheetTrigger>
-            <SheetContent side="bottom" className={`h-[70vh] transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-              <SheetHeader>
-                <SheetTitle className={`transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Filter Layanan</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 space-y-4">
-                <div>
-                  <h4 className={`font-medium mb-3 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Kategori</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {categories.map((cat, index) => {
-                      const Icon = cat.icon;
-                      return (
-                        <motion.button
-                          key={cat.id}
-                          onClick={() => {
-                            handleCategoryClick(cat.id);
-                            audioService.playClick();
-                          }}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-300 ${
-                            selectedCategory === cat.id
-                              ? 'bg-gradient-to-r from-blue-600 to-orange-500 text-white shadow-lg'
-                              : isDarkMode 
-                                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.05 * index }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Icon className="h-4 w-4" />
-                          {cat.label}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className={`font-medium mb-3 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>Urutkan</h4>
-                  <div className="space-y-2">
-                    {['Harga Terendah', 'Harga Tertinggi', 'Rating Tertinggi', 'Paling Banyak Dibeli'].map((sort, index) => (
-                      <motion.button
-                        key={sort}
-                        className={`w-full text-left px-4 py-3 rounded-lg text-sm transition-all duration-300 ${
-                          isDarkMode 
-                            ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.05 * index }}
-                        whileHover={{ x: 4 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        {sort}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Cari layanan..."
+            className={`pl-9 transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white focus:border-primary' : 'focus:border-primary'}`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </motion.div>
 
@@ -346,15 +183,18 @@ export function HomeSection() {
             </motion.div>
             <p className={`transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tidak ada layanan yang ditemukan</p>
             {searchQuery && (
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => {setSearchQuery(''); setSelectedCategory('all');}}
-                >
-                  Reset Filter
-                </Button>
-              </motion.div>
+              <motion.button
+                className={`mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                  isDarkMode 
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                onClick={() => setSearchQuery('')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Reset Pencarian
+              </motion.button>
             )}
           </motion.div>
         ) : (
@@ -387,54 +227,6 @@ export function HomeSection() {
         product={selectedProduct}
         onAddToCart={handleAddToCart}
       />
-
-      {/* Promo Modal */}
-      <Dialog open={showPromoModal} onOpenChange={setShowPromoModal}>
-        <DialogContent className={`max-w-md transition-colors duration-500 ${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white'}`}>
-          <DialogHeader>
-            <DialogTitle className={`transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>
-              {currentPromo?.label}
-            </DialogTitle>
-          </DialogHeader>
-          <motion.div 
-            className="mt-4 space-y-3"
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-          >
-            {currentPromo && getPromoProducts(currentPromo.type).map((product) => (
-              <motion.div
-                key={product.id}
-                onClick={() => {
-                  handleProductClick(product);
-                  setShowPromoModal(false);
-                }}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-300 ${
-                  isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-50 hover:bg-gray-100'
-                }`}
-                variants={itemVariants}
-                whileHover={{ x: 4, scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <motion.img 
-                  src={product.icon} 
-                  alt={product.title} 
-                  className="w-12 h-12 object-cover rounded-lg"
-                  whileHover={{ rotate: 5, scale: 1.1 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                />
-                <div className="flex-1">
-                  <p className={`font-medium text-sm transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>{product.title}</p>
-                  <p className="text-xs text-blue-600">
-                    Rp {(product.discount_price || product.base_price).toLocaleString('id-ID')}
-                  </p>
-                </div>
-                <ChevronRight className={`h-4 w-4 transition-colors duration-300 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </DialogContent>
-      </Dialog>
     </motion.div>
   );
 }
@@ -469,12 +261,12 @@ function HeroBanner() {
     },
   ];
 
-  useEffect(() => {
+  useState(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  });
 
   return (
     <div className="relative h-48 overflow-hidden">
@@ -547,7 +339,6 @@ interface ProductCardProps {
   isInCart: boolean;
   cartQuantity: number;
   isDarkMode: boolean;
-
 }
 
 function ProductCard({ product, onClick, isInCart, cartQuantity, isDarkMode }: ProductCardProps) {
