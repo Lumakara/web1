@@ -9,6 +9,7 @@ import { AuthSection } from '@/sections/AuthSection';
 import { SupportSectionUltra } from '@/sections/SupportSectionUltra';
 import { ProfileSectionUltra } from '@/sections/ProfileSectionUltra';
 import { CheckoutSection } from '@/sections/CheckoutSection';
+import { ProductDetailSection } from '@/sections/ProductDetailSection';
 import { WelcomeModalUltra } from '@/components/WelcomeModalUltra';
 import { AuthCallback } from '@/components/AuthCallback';
 import { useAppStore } from '@/store/appStore';
@@ -371,6 +372,7 @@ function App() {
           <main className={`min-h-screen ${!isCheckout ? 'pt-14 pb-20' : ''}`}>
             <Routes>
               <Route path="/" element={<HomeSection />} />
+              <Route path="/product/:productId" element={<ProductDetailSection />} />
               <Route path="/cart" element={<CartSection />} />
               <Route path="/auth" element={<AuthSection />} />
               <Route path="/auth/callback" element={<AuthCallback />} />

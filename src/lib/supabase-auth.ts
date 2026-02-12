@@ -296,7 +296,7 @@ export const AuthService = {
           data: {
             ...userData,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${import.meta.env.VITE_SITE_URL || window.location.origin}/auth/callback`,
         },
       });
 
@@ -393,10 +393,12 @@ export const AuthService = {
     try {
       console.log('[AuthService] OAuth sign in with:', provider);
 
+      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${siteUrl}/auth/callback`,
           queryParams: provider === 'google' ? {
             access_type: 'offline',
             prompt: 'consent',
@@ -521,10 +523,11 @@ export const AuthService = {
     try {
       console.log('[AuthService] Sending password reset to:', email);
 
+      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
         {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
+          redirectTo: `${siteUrl}/auth/reset-password`,
         }
       );
 
@@ -722,11 +725,12 @@ export const AuthService = {
       // Supabase doesn't have a direct resend verification method
       // We use signUp again with the same email to trigger a new verification email
       // The user won't be created again if already exists
+      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email.trim().toLowerCase(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${siteUrl}/auth/callback`,
         },
       });
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, Zap, Headphones, Palette, Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppStore } from '@/store/appStore';
 import { audioService } from '@/lib/audio';
-import { ProductModalUltra } from '@/components/ProductModalUltra';
 import type { Product } from '@/lib/supabase';
 
 // Animation variants
@@ -74,11 +74,10 @@ const pulseVariants = {
 };
 
 export function HomeSection() {
+  const navigate = useNavigate();
   const { products, isLoading } = useProducts();
-  const { addToCart, cart, addRecentlyViewed, isDarkMode } = useAppStore();
+  const { cart, addRecentlyViewed, isDarkMode } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showProductModal, setShowProductModal] = useState(false);
 
   // Filter products based on search query only
   const filteredProducts = products.filter((product) => {
@@ -91,14 +90,8 @@ export function HomeSection() {
 
   const handleProductClick = (product: Product) => {
     audioService.playClick();
-    setSelectedProduct(product);
-    setShowProductModal(true);
     addRecentlyViewed(product.id);
-  };
-
-  const handleAddToCart = (product: Product, tier: string) => {
-    addToCart(product, tier);
-    setShowProductModal(false);
+    navigate(`/product/${product.id}`);
   };
 
   const isInCart = (productId: string, tierName: string) => {
@@ -220,13 +213,6 @@ export function HomeSection() {
         )}
       </div>
 
-      {/* Product Detail Modal - Using ProductModalUltra */}
-      <ProductModalUltra
-        isOpen={showProductModal}
-        onClose={() => setShowProductModal(false)}
-        product={selectedProduct}
-        onAddToCart={handleAddToCart}
-      />
     </motion.div>
   );
 }
