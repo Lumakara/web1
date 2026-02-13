@@ -224,26 +224,32 @@ function HeroBanner() {
     {
       title: 'Layanan Digital Profesional',
       subtitle: 'Solusi lengkap untuk kebutuhan teknologi Anda',
-      gradient: 'from-blue-600 via-blue-500 to-cyan-400',
+      image: '/assets/media/b1.webp',
       icon: Zap,
     },
     {
       title: 'Instalasi Wi-Fi & CCTV',
       subtitle: 'Jaringan aman dan terpercaya untuk rumah & kantor',
-      gradient: 'from-orange-500 via-orange-400 to-yellow-400',
+      image: '/assets/media/b2.webp',
       icon: Shield,
     },
     {
       title: 'Editing Kreatif',
       subtitle: 'Photo & video editing profesional',
-      gradient: 'from-purple-600 via-purple-500 to-pink-400',
+      image: '/assets/media/b3.webp',
       icon: Palette,
     },
     {
       title: 'Support Teknis 24/7',
       subtitle: 'Tim ahli siap membantu kapan saja',
-      gradient: 'from-green-600 via-green-500 to-emerald-400',
+      image: '/assets/media/b4.webp',
       icon: Headphones,
+    },
+    {
+      title: 'Layanan Terbaik',
+      subtitle: 'Kualitas terjamin untuk kepuasan pelanggan',
+      image: '/assets/media/b5.webp',
+      icon: Star,
     },
   ];
 
@@ -263,13 +269,22 @@ function HeroBanner() {
           return (
             <motion.div
               key={index}
-              className={`absolute inset-0 flex items-center justify-center bg-gradient-to-r px-6 ${slide.gradient}`}
+              className="absolute inset-0 flex items-center justify-center"
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.7, ease: 'easeInOut' }}
             >
-              <div className="text-center text-white">
+              {/* Background Image */}
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              {/* Dark Overlay for text readability */}
+              <div className="absolute inset-0 bg-black/40" />
+              
+              <div className="relative z-10 text-center text-white px-6">
                 <motion.div 
                   className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
                   initial={{ scale: 0, rotate: -180 }}
@@ -279,7 +294,7 @@ function HeroBanner() {
                   <Icon className="h-8 w-8" />
                 </motion.div>
                 <motion.h2 
-                  className="text-xl font-bold"
+                  className="text-xl font-bold drop-shadow-lg"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -287,7 +302,7 @@ function HeroBanner() {
                   {slide.title}
                 </motion.h2>
                 <motion.p 
-                  className="text-white/80 mt-2 text-sm"
+                  className="text-white/90 mt-2 text-sm drop-shadow-md"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
@@ -301,7 +316,7 @@ function HeroBanner() {
       </AnimatePresence>
 
       {/* Navigation Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {slides.map((_, index) => (
           <motion.button
             key={index}

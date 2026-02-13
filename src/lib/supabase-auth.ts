@@ -393,7 +393,8 @@ export const AuthService = {
     try {
       console.log('[AuthService] OAuth sign in with:', provider);
 
-      const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      // Always use VITE_SITE_URL for production redirect
+      const siteUrl = import.meta.env.VITE_SITE_URL || 'https://web1-two-nu.vercel.app';
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
