@@ -76,7 +76,7 @@ function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
               }`}
               onClick={() => handleAddToCart(product)}
             >
-              <img src={product.icon} alt={product.title} className="w-14 h-14 object-cover rounded-lg shadow-md" />
+              <img src={product.icon} alt={product.title} className="w-14 h-14 object-cover rounded-lg shadow-md" loading="lazy" />
               <div className="flex-1 min-w-0">
                 <p className={`font-medium text-sm truncate ${isDarkMode ? 'text-white' : ''}`}>{product.title}</p>
                 <p className="text-xs text-blue-500 font-semibold">Rp {product.base_price.toLocaleString('id-ID')}</p>

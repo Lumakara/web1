@@ -2,18 +2,185 @@
 <html lang="id">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="/assets/favicon.ico" />
+    
+    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/assets/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/assets/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/assets/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/favicon.ico" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Theme Colors -->
     <meta name="theme-color" content="#2563eb" />
-    <meta name="description" content="Layanan Digital Profesional - Solusi lengkap untuk kebutuhan teknologi Anda" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-navbutton-color" content="#2563eb" />
+    
+    <!-- iOS Specific -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Layanan Digital" />
+    
+    <!-- Mobile Optimization -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+    
+    <!-- SEO Meta Tags -->
     <title>%VITE_WEBSITE_NAME%</title>
+    <meta name="description" content="Layanan Digital Profesional - Solusi lengkap untuk kebutuhan teknologi Anda. VPS Hosting, WiFi Installation, CCTV, Code Repair, Photo & Video Editing." />
+    <meta name="keywords" content="vps hosting, wifi instalasi, cctv, code repair, photo editing, video editing, layanan digital, teknologi" />
+    <meta name="author" content="Layanan Digital" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Layanan Digital Profesional" />
+    <meta property="og:description" content="Solusi lengkap untuk kebutuhan teknologi Anda. VPS Hosting, WiFi Installation, CCTV, Code Repair, Photo & Video Editing." />
+    <meta property="og:image" content="/assets/og-image.jpg" />
+    <meta property="og:url" content="https://web1-two-nu.vercel.app" />
+    <meta property="og:locale" content="id_ID" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layanan Digital Profesional" />
+    <meta name="twitter:description" content="Solusi lengkap untuk kebutuhan teknologi Anda." />
+    <meta name="twitter:image" content="/assets/og-image.jpg" />
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://ojwbrhxdencqqrexezhe.supabase.co" crossorigin />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="https://ojwbrhxdencqqrexezhe.supabase.co" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/src/main.tsx" as="script" type="module" />
+    <link rel="preload" href="/assets/media/b1.webp" as="image" type="image/webp" />
+    
+    <!-- Prevent Flash of Unstyled Content -->
+    <style>
+      /* Critical CSS for initial render */
+      html {
+        background-color: #f9fafb;
+      }
+      html.dark {
+        background-color: #111827;
+      }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      #root {
+        min-height: 100vh;
+      }
+      /* Loading spinner */
+      .initial-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eff6ff 0%, #fff7ed 100%);
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      .initial-loader.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .initial-loader__spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #e5e7eb;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      /* Hide loader when app is ready */
+      .app-ready .initial-loader {
+        display: none;
+      }
+    </style>
   </head>
   <body>
+    <!-- Initial Loading Screen -->
+    <div id="initial-loader" class="initial-loader">
+      <div class="initial-loader__spinner"></div>
+    </div>
+    
+    <!-- Root Element -->
     <div id="root"></div>
+    
+    <!-- Main App Script -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('[SW] Registered successfully:', registration.scope);
+              
+              // Check for updates periodically
+              setInterval(() => {
+                registration.update();
+              }, 60 * 60 * 1000); // Check every hour
+            })
+            .catch((error) => {
+              console.error('[SW] Registration failed:', error);
+            });
+        });
+      }
+      
+      // Hide initial loader when app is ready
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          setTimeout(() => {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+              loader.style.display = 'none';
+            }, 300);
+          }, 500);
+        }
+      });
+      
+      // Handle online/offline status
+      window.addEventListener('online', () => {
+        console.log('[App] Connection restored');
+        document.body.classList.remove('offline');
+      });
+      
+      window.addEventListener('offline', () => {
+        console.log('[App] Connection lost');
+        document.body.classList.add('offline');
+      });
+    </script>
+    
+    <!-- Noscript Warning -->
+    <noscript>
+      <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #1f2937; color: white; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; text-align: center; z-index: 99999;">
+        <h1 style="font-size: 24px; margin-bottom: 16px;">⚠️ JavaScript Diperlukan</h1>
+        <p style="font-size: 16px; opacity: 0.8;">Aplikasi ini memerlukan JavaScript untuk berfungsi. Silakan aktifkan JavaScript di browser Anda.</p>
+      </div>
+    </noscript>
   </body>
 </html>

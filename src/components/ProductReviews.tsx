@@ -161,7 +161,7 @@ export function ProductReviews({ productId, isOpen, onClose }: ProductReviewsPro
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     {review.userAvatar ? (
-                      <img src={review.userAvatar} alt={review.userName} className="w-full h-full rounded-full object-cover" />
+                      <img src={review.userAvatar} alt={review.userName} className="w-full h-full rounded-full object-cover" loading="lazy" />
                     ) : (
                       <User className="h-5 w-5 text-white" />
                     )}

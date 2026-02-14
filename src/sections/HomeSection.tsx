@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Star, Zap, Headphones, Palette, Shield } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useProducts } from '@/hooks/useProducts';
 import { useAppStore } from '@/store/appStore';
 import { audioService } from '@/lib/audio';
+import { LazyImage, LazyBackgroundImage } from '@/components/LazyImage';
 import type { Product } from '@/lib/supabase';
 
 // Animation variants
@@ -219,6 +220,7 @@ export function HomeSection() {
 
 function HeroBanner() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   
   const slides = [
     {
@@ -253,15 +255,23 @@ function HeroBanner() {
     },
   ];
 
-  useState(() => {
+  // Auto-advance slides
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
     return () => clearInterval(timer);
-  });
+  }, [slides.length]);
 
   return (
     <div className="relative h-48 overflow-hidden">
+      {/* Preload all banner images */}
+      <div className="hidden">
+        {slides.map((slide, idx) => (
+          <img key={idx} src={slide.image} alt="" />
+        ))}
+      </div>
+      
       <AnimatePresence mode="wait">
         {slides.map((slide, index) => {
           const Icon = slide.icon;
@@ -275,18 +285,23 @@ function HeroBanner() {
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.7, ease: 'easeInOut' }}
             >
-              {/* Background Image */}
-              <img
+              {/* Background Image with Lazy Loading */}
+              <LazyImage
                 src={slide.image}
                 alt={slide.title}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0"
+                containerClassName="absolute inset-0"
+                objectFit="cover"
+                priority={index === 0}
+                blurEffect={true}
               />
+              
               {/* Dark Overlay for text readability */}
-              <div className="absolute inset-0 bg-black/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/40" />
               
               <div className="relative z-10 text-center text-white px-6">
                 <motion.div 
-                  className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/10"
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
@@ -294,7 +309,7 @@ function HeroBanner() {
                   <Icon className="h-8 w-8" />
                 </motion.div>
                 <motion.h2 
-                  className="text-xl font-bold drop-shadow-lg"
+                  className="text-xl font-bold drop-shadow-lg text-shadow"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -354,7 +369,7 @@ function ProductCard({ product, onClick, isInCart, cartQuantity, isDarkMode }: P
   return (
     <motion.div
       onClick={onClick}
-      className={`rounded-xl shadow-sm overflow-hidden cursor-pointer transition-shadow duration-300 ${
+      className={`group rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl ${
         isDarkMode ? 'bg-gray-800' : 'bg-white'
       }`}
       variants={itemVariants}
@@ -364,15 +379,16 @@ function ProductCard({ product, onClick, isInCart, cartQuantity, isDarkMode }: P
       layout
     >
       <motion.div 
-        className="relative aspect-square"
+        className="relative aspect-square overflow-hidden"
         variants={cardHoverVariants}
       >
-        <motion.img
+        <LazyImage
           src={product.icon}
           alt={product.title}
-          className="w-full h-full object-cover"
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.4 }}
+          containerClassName="w-full h-full"
+          className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+          objectFit="cover"
+          blurEffect={true}
         />
         <AnimatePresence>
           {hasDiscount && (

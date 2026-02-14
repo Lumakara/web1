@@ -24,6 +24,8 @@ import {
   Info,
   Paperclip,
   HelpCircle,
+  Terminal,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,13 +61,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAppStore } from '@/store/appStore';
 import { useSupport, type TicketFormData } from '@/hooks/useSupport';
 import {
-  KimiAIService,
+  OpenAIService,
   type ChatMessage,
   type ProductCardData,
   type ChatResponse,
   getTimeBasedGreeting,
   formatPrice,
-} from '@/lib/kimi-ai';
+} from '@/lib/openai';
 import type { Product } from '@/lib/supabase';
 
 // ============================================================================
@@ -147,6 +149,7 @@ interface ChatMessageUI extends ChatMessage {
   suggestions?: string[];
   isTyping?: boolean;
   attachments?: { name: string; type: string; size: string }[];
+  errorLogs?: string; // Error logs to display
 }
 
 // ============================================================================
@@ -206,7 +209,7 @@ function AnimatedHeader() {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 p-6 text-white shadow-xl"
+      className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500 p-4 sm:p-6 text-white shadow-xl"
     >
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -235,7 +238,7 @@ function AnimatedHeader() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur-sm"
+          className="mb-3 sm:mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur-sm"
         >
           <Sparkles className="h-3 w-3" />
           <span>Dukungan 24/7 dengan AI</span>
@@ -245,7 +248,7 @@ function AnimatedHeader() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mb-2 text-3xl font-bold"
+          className="mb-2 text-xl sm:text-3xl font-bold"
         >
           Pusat Bantuan
         </motion.h1>
@@ -254,7 +257,7 @@ function AnimatedHeader() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mb-6 text-white/80"
+          className="mb-4 sm:mb-6 text-sm sm:text-base text-white/80"
         >
           Kami siap membantu Anda kapan saja
         </motion.p>
@@ -264,22 +267,22 @@ function AnimatedHeader() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="grid grid-cols-3 gap-3"
+          className="grid grid-cols-3 gap-2 sm:gap-3"
         >
-          <div className="rounded-xl bg-white/10 p-3 text-center backdrop-blur-sm">
-            <Clock className="mx-auto mb-1 h-5 w-5" />
-            <div className="text-lg font-bold">&lt;2m</div>
-            <div className="text-xs text-white/70">Response</div>
+          <div className="rounded-xl bg-white/10 p-2 sm:p-3 text-center backdrop-blur-sm">
+            <Clock className="mx-auto mb-1 h-4 sm:h-5 w-4 sm:w-5" />
+            <div className="text-sm sm:text-lg font-bold">&lt;2m</div>
+            <div className="text-[10px] sm:text-xs text-white/70">Response</div>
           </div>
-          <div className="rounded-xl bg-white/10 p-3 text-center backdrop-blur-sm">
-            <Star className="mx-auto mb-1 h-5 w-5" />
-            <div className="text-lg font-bold">4.9</div>
-            <div className="text-xs text-white/70">Rating</div>
+          <div className="rounded-xl bg-white/10 p-2 sm:p-3 text-center backdrop-blur-sm">
+            <Star className="mx-auto mb-1 h-4 sm:h-5 w-4 sm:w-5" />
+            <div className="text-sm sm:text-lg font-bold">4.9</div>
+            <div className="text-[10px] sm:text-xs text-white/70">Rating</div>
           </div>
-          <div className="rounded-xl bg-white/10 p-3 text-center backdrop-blur-sm">
-            <Shield className="mx-auto mb-1 h-5 w-5" />
-            <div className="text-lg font-bold">99%</div>
-            <div className="text-xs text-white/70">Resolved</div>
+          <div className="rounded-xl bg-white/10 p-2 sm:p-3 text-center backdrop-blur-sm">
+            <Shield className="mx-auto mb-1 h-4 sm:h-5 w-4 sm:w-5" />
+            <div className="text-sm sm:text-lg font-bold">99%</div>
+            <div className="text-[10px] sm:text-xs text-white/70">Resolved</div>
           </div>
         </motion.div>
       </div>
@@ -300,12 +303,12 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
     {
       id: 'chat',
       icon: Bot,
-      title: 'Kimi AI',
+      title: 'AI Assistant',
       subtitle: 'Online 24/7',
       color: 'from-green-500 to-emerald-600',
       bgColor: 'bg-green-50 dark:bg-green-900/20',
       onClick: onChatClick,
-      badge: 'Ultra Pintar',
+      badge: 'GPT-4o',
       pulse: true,
     },
     {
@@ -337,7 +340,7 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-3 gap-3"
+      className="grid grid-cols-3 gap-2 sm:gap-3"
     >
       {options.map((option) => (
         <motion.button
@@ -347,13 +350,13 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
           initial="rest"
           animate="rest"
           onClick={option.onClick}
-          className={`group relative overflow-hidden rounded-2xl ${option.bgColor} p-4 transition-all`}
+          className={`group relative overflow-hidden rounded-xl sm:rounded-2xl ${option.bgColor} p-2 sm:p-4 transition-all`}
         >
           <motion.div variants={cardHoverVariants} className="relative z-10 flex flex-col items-center">
             <div
-              className={`relative mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${option.color} text-white shadow-lg`}
+              className={`relative mb-2 sm:mb-3 flex h-10 sm:h-14 w-10 sm:w-14 items-center justify-center rounded-full bg-gradient-to-br ${option.color} text-white shadow-lg`}
             >
-              <option.icon className="h-6 w-6" />
+              <option.icon className="h-4 sm:h-6 w-4 sm:w-6" />
               {option.pulse && (
                 <motion.span
                   animate={pulseAnimation}
@@ -361,10 +364,10 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
                 />
               )}
             </div>
-            <span className="font-semibold text-gray-900 dark:text-white">
+            <span className="text-xs sm:text-base font-semibold text-gray-900 dark:text-white text-center">
               {option.title}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 text-center">
               {option.subtitle}
             </span>
           </motion.div>
@@ -373,13 +376,12 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              className={`absolute right-2 top-2 rounded-full bg-gradient-to-r ${option.color} px-2 py-0.5 text-[10px] font-medium text-white`}
+              className={`absolute right-1 top-1 sm:right-2 sm:top-2 rounded-full bg-gradient-to-r ${option.color} px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[10px] font-medium text-white`}
             >
               {option.badge}
             </motion.div>
           )}
 
-          {/* Hover gradient overlay */}
           <div
             className={`absolute inset-0 bg-gradient-to-br ${option.color} opacity-0 transition-opacity duration-300 group-hover:opacity-10`}
           />
@@ -389,24 +391,22 @@ function ContactOptions({ onChatClick, onTicketClick }: ContactOptionsProps) {
   );
 }
 
-
-
 // ============================================================================
-// Kimi AI Chat Interface - Floating Widget
+// AI Chat Interface - Mobile Responsive
 // ============================================================================
-interface KimiChatInterfaceProps {
+interface AIChatInterfaceProps {
   products: Product[];
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
 }
 
-function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterfaceProps) {
+function AIChatInterface({ products, isOpen, onOpen, onClose }: AIChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessageUI[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `${getTimeBasedGreeting()}! 👋 Saya Kimi Assistant.\n\nSaya bisa bantu:\n• Info produk & harga\n• Rekomendasi layanan\n• Jawaban cepat\n\nAda yang bisa saya bantu?`,
+      content: `${getTimeBasedGreeting()}! 👋 Saya AI Assistant powered by GPT-4o.\n\nSaya bisa bantu:\n• Info produk & harga\n• Rekomendasi layanan\n• Jawaban cepat\n• Troubleshooting\n\nAda yang bisa saya bantu?`,
       timestamp: Date.now(),
       suggestions: ['Lihat produk', 'Paket WiFi', 'CCTV'],
     },
@@ -414,6 +414,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [showErrorLogs, setShowErrorLogs] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { setNotification, addToCart } = useAppStore();
@@ -444,7 +445,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
     setIsTyping(true);
 
     try {
-      await KimiAIService.streamMessage(
+      await OpenAIService.streamMessage(
         [{ role: 'user', content: input }],
         (_chunk, full) => setStreamingText(full),
         { context: { products }, temperature: 0.7 }
@@ -452,7 +453,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
 
       setStreamingText('');
 
-      const response: ChatResponse = await KimiAIService.sendMessageWithContext(
+      const response: ChatResponse = await OpenAIService.sendMessageWithContext(
         [{ role: 'user', content: input }],
         products,
         undefined,
@@ -466,14 +467,19 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
         timestamp: Date.now(),
         productCards: response.productCards,
         suggestions: response.suggestions?.slice(0, 3),
+        errorLogs: response.errorLogs,
       }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
+      const errorMessage = error?.message || 'Maaf, terjadi kesalahan. Silakan coba lagi.';
+      const errorLogs = error?.details || error?.stack || JSON.stringify(error, null, 2);
+      
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+        content: errorMessage,
         timestamp: Date.now(),
+        errorLogs: errorLogs,
         suggestions: ['Coba lagi'],
       }]);
     } finally {
@@ -514,7 +520,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
       timestamp: Date.now(),
       suggestions: ['Lihat produk', 'Paket WiFi', 'CCTV'],
     }]);
-    KimiAIService.clearHistory();
+    OpenAIService.clearHistory();
   };
 
   return (
@@ -529,38 +535,41 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={onOpen}
-            className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30"
+            className="fixed bottom-4 right-4 z-50 flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30"
           >
-            <Bot className="h-6 w-6" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3 sm:h-4 sm:w-4">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex h-4 w-4 rounded-full bg-green-500" />
+              <span className="relative inline-flex h-full w-full rounded-full bg-green-500" />
             </span>
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Chat Window */}
+      {/* Chat Window - Mobile Responsive */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed bottom-20 right-4 z-50 flex w-[calc(100vw-2rem)] max-w-[400px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
-            style={{ maxHeight: 'min(600px, calc(100vh - 7rem))', height: '500px' }}
+            className="fixed inset-x-0 bottom-0 top-0 z-50 sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[calc(100vw-2rem)] sm:max-w-[420px] flex flex-col overflow-hidden rounded-none sm:rounded-2xl border-0 sm:border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+            style={{ 
+              maxHeight: '100vh',
+              height: '100%',
+            }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3">
+            <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-green-500 to-emerald-600 px-3 sm:px-4 py-2 sm:py-3 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white">
-                  <Bot className="h-5 w-5" />
+                <div className="flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-white/20 text-white">
+                  <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm text-white">Kimi AI</h3>
-                  <div className="flex items-center gap-1 text-[10px] text-white/80">
+                  <h3 className="font-semibold text-xs sm:text-sm text-white">AI Assistant</h3>
+                  <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-white/80">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-300" />
-                    Online
+                    Online • GPT-4o
                   </div>
                 </div>
               </div>
@@ -569,71 +578,96 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
                   variant="ghost"
                   size="icon"
                   onClick={handleReset}
-                  className="h-8 w-8 text-white/80 hover:bg-white/20 hover:text-white"
+                  className="h-7 w-7 sm:h-8 sm:w-8 text-white/80 hover:bg-white/20 hover:text-white"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="h-8 w-8 text-white/80 hover:bg-white/20 hover:text-white"
+                  className="h-7 w-7 sm:h-8 sm:w-8 text-white/80 hover:bg-white/20 hover:text-white"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 px-3 py-3">
+            <ScrollArea className="flex-1 px-2 sm:px-3 py-2 sm:py-3 min-h-0">
               <div className="space-y-3">
                 {messages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`flex max-w-[90%] gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[10px] ${
+                    <div className={`flex max-w-[92%] sm:max-w-[90%] gap-1.5 sm:gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`flex h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 items-center justify-center rounded-full text-[9px] sm:text-[10px] ${
                         message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
                       }`}>
-                        {message.role === 'user' ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+                        {message.role === 'user' ? <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> : <Bot className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                       </div>
-                      <div className="space-y-1.5">
-                        <div className={`rounded-2xl px-3 py-2 text-xs ${
+                      <div className="space-y-1 sm:space-y-1.5 min-w-0 flex-1">
+                        <div className={`rounded-2xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs ${
                           message.role === 'user'
                             ? 'bg-blue-600 text-white rounded-br-md'
-                            : 'bg-gray-100 text-gray-800 rounded-bl-md dark:bg-gray-800 dark:text-gray-200'
+                            : message.errorLogs 
+                              ? 'bg-red-50 text-red-800 rounded-bl-md dark:bg-red-900/20 dark:text-red-200 border border-red-200 dark:border-red-800'
+                              : 'bg-gray-100 text-gray-800 rounded-bl-md dark:bg-gray-800 dark:text-gray-200'
                         }`}>
                           <div className="whitespace-pre-wrap">{message.content}</div>
+                          
+                          {/* Error Logs Toggle */}
+                          {message.errorLogs && (
+                            <button
+                              onClick={() => setShowErrorLogs(showErrorLogs === message.id ? null : message.id)}
+                              className="mt-2 flex items-center gap-1 text-[9px] sm:text-[10px] text-red-600 dark:text-red-400 hover:underline"
+                            >
+                              <Terminal className="h-3 w-3" />
+                              {showErrorLogs === message.id ? 'Sembunyikan logs' : 'Lihat error logs'}
+                            </button>
+                          )}
+                          
+                          {/* Error Logs Content */}
+                          {showErrorLogs === message.id && message.errorLogs && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-2 p-2 bg-black/90 rounded text-[9px] font-mono text-green-400 overflow-x-auto"
+                            >
+                              <pre className="whitespace-pre-wrap break-all">{message.errorLogs}</pre>
+                            </motion.div>
+                          )}
                         </div>
 
                         {/* Product Cards */}
                         {message.productCards && message.productCards.length > 0 && (
-                          <div className="grid gap-2">
+                          <div className="grid gap-1.5 sm:gap-2">
                             {message.productCards.slice(0, 2).map((product) => (
                               <motion.div
                                 key={product.id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="overflow-hidden rounded-lg border border-gray-200 bg-white text-xs dark:border-gray-700 dark:bg-gray-800"
+                                className="overflow-hidden rounded-lg border border-gray-200 bg-white text-[10px] sm:text-xs dark:border-gray-700 dark:bg-gray-800"
                               >
-                                <div className="relative h-20 overflow-hidden">
-                                  <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
+                                <div className="relative h-16 sm:h-20 overflow-hidden">
+                                  <img src={product.image} alt={product.title} className="h-full w-full object-cover" loading="lazy" />
                                   {product.originalPrice && (
-                                    <span className="absolute left-1.5 top-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[9px] text-white">Promo</span>
+                                    <span className="absolute left-1 top-1 sm:left-1.5 sm:top-1.5 rounded-full bg-red-500 px-1 py-0.5 text-[8px] sm:text-[9px] text-white">Promo</span>
                                   )}
                                 </div>
-                                <div className="p-2">
-                                  <h4 className="mb-0.5 font-medium line-clamp-1">{product.title}</h4>
-                                  <p className="mb-1.5 text-[10px] text-gray-500 line-clamp-1">{product.description}</p>
+                                <div className="p-1.5 sm:p-2">
+                                  <h4 className="mb-0.5 font-medium line-clamp-1 text-xs sm:text-sm">{product.title}</h4>
+                                  <p className="mb-1 text-[9px] sm:text-[10px] text-gray-500 line-clamp-1">{product.description}</p>
                                   <div className="flex items-center justify-between">
-                                    <span className="font-semibold text-blue-600">{formatPrice(product.price)}</span>
+                                    <span className="font-semibold text-blue-600 text-xs sm:text-sm">{formatPrice(product.price)}</span>
                                     <Button
                                       size="sm"
-                                      className="h-6 bg-gradient-to-r from-blue-600 to-orange-500 px-2 text-[10px]"
+                                      className="h-5 sm:h-6 bg-gradient-to-r from-blue-600 to-orange-500 px-1.5 sm:px-2 text-[9px] sm:text-[10px]"
                                       onClick={() => handleAddToCart(product)}
                                     >
-                                      <ShoppingCart className="mr-1 h-3 w-3" />
+                                      <ShoppingCart className="mr-0.5 sm:mr-1 h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                       Beli
                                     </Button>
                                   </div>
@@ -645,12 +679,12 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
 
                         {/* Suggestions */}
                         {message.suggestions && message.suggestions.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1 sm:gap-1.5">
                             {message.suggestions.map((suggestion) => (
                               <button
                                 key={suggestion}
                                 onClick={() => handleQuickReply(suggestion)}
-                                className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[10px] text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] text-blue-600 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                               >
                                 {suggestion}
                               </button>
@@ -658,7 +692,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
                           </div>
                         )}
 
-                        <span className="block text-[9px] text-gray-400">
+                        <span className="block text-[8px] sm:text-[9px] text-gray-400">
                           {new Date(message.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -669,13 +703,13 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
                 {/* Streaming */}
                 {streamingText && (
                   <div className="flex justify-start">
-                    <div className="flex max-w-[90%] gap-2">
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                        <Bot className="h-3.5 w-3.5" />
+                    <div className="flex max-w-[92%] sm:max-w-[90%] gap-1.5 sm:gap-2">
+                      <div className="flex h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                        <Bot className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </div>
-                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3 py-2 text-xs dark:bg-gray-800">
+                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs dark:bg-gray-800">
                         {streamingText}
-                        <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-pulse bg-gray-400" />
+                        <span className="ml-0.5 inline-block h-3 sm:h-3.5 w-0.5 animate-pulse bg-gray-400" />
                       </div>
                     </div>
                   </div>
@@ -684,15 +718,15 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
                 {/* Typing */}
                 {isTyping && !streamingText && (
                   <div className="flex justify-start">
-                    <div className="flex max-w-[90%] gap-2">
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-                        <Bot className="h-3.5 w-3.5" />
+                    <div className="flex max-w-[92%] sm:max-w-[90%] gap-1.5 sm:gap-2">
+                      <div className="flex h-6 w-6 sm:h-7 sm:w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                        <Bot className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </div>
-                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-3 py-2 dark:bg-gray-800">
+                      <div className="rounded-2xl rounded-bl-md bg-gray-100 px-2.5 sm:px-3 py-1.5 sm:py-2 dark:bg-gray-800">
                         <div className="flex gap-1">
-                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.1 }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.2 }} className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity }} className="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-gray-400" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.1 }} className="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-gray-400" />
+                          <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.4, repeat: Infinity, delay: 0.2 }} className="h-1 sm:h-1.5 w-1 sm:w-1.5 rounded-full bg-gray-400" />
                         </div>
                       </div>
                     </div>
@@ -703,7 +737,7 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
             </ScrollArea>
 
             {/* Input */}
-            <div className="border-t border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900">
+            <div className="border-t border-gray-100 bg-gray-50 p-2 sm:p-3 dark:border-gray-800 dark:bg-gray-900 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Input
                   ref={inputRef}
@@ -712,15 +746,15 @@ function KimiChatInterface({ products, isOpen, onOpen, onClose }: KimiChatInterf
                   onKeyPress={handleKeyPress}
                   placeholder="Ketik pesan..."
                   disabled={isTyping}
-                  className="h-9 flex-1 bg-white text-xs dark:bg-gray-800"
+                  className="h-8 sm:h-9 flex-1 bg-white text-[11px] sm:text-xs dark:bg-gray-800"
                 />
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim() || isTyping}
                   size="icon"
-                  className="h-9 w-9 flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600"
+                  className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 bg-gradient-to-r from-green-500 to-emerald-600"
                 >
-                  {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {isTyping ? <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                 </Button>
               </div>
             </div>
@@ -758,7 +792,7 @@ function FAQSection() {
       className="space-y-4"
     >
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
           Pertanyaan Umum
         </h2>
         <Badge variant="secondary" className="text-xs">
@@ -773,7 +807,7 @@ function FAQSection() {
           placeholder="Cari pertanyaan..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 text-sm"
         />
       </div>
 
@@ -819,9 +853,9 @@ function FAQSection() {
           >
             <AccordionItem
               value={faq.id}
-              className="rounded-xl border border-gray-200 bg-white px-4 dark:border-gray-700 dark:bg-gray-800"
+              className="rounded-xl border border-gray-200 bg-white px-3 sm:px-4 dark:border-gray-700 dark:bg-gray-800"
             >
-              <AccordionTrigger className="text-left text-sm hover:no-underline">
+              <AccordionTrigger className="text-left text-sm hover:no-underline py-3">
                 <div className="flex items-center gap-2">
                   <HelpCircle className="h-4 w-4 flex-shrink-0 text-blue-500" />
                   <span className="font-medium text-gray-900 dark:text-white">
@@ -928,7 +962,7 @@ function TicketFormModal({ isOpen, onClose }: TicketFormModalProps) {
             <FileText className="h-5 w-5 text-blue-500" />
             Buat Tiket Dukungan
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="sr-only">
             Laporkan masalah atau dapatkan bantuan detail dari tim kami
           </DialogDescription>
         </DialogHeader>
@@ -1138,8 +1172,6 @@ function TicketFormModal({ isOpen, onClose }: TicketFormModalProps) {
   );
 }
 
-
-
 // ============================================================================
 // Main Support Section Ultra Component
 // ============================================================================
@@ -1154,7 +1186,7 @@ export function SupportSectionUltra() {
         isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
       }`}
     >
-      <div className="mx-auto max-w-2xl space-y-6 px-4">
+      <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6 px-3 sm:px-4">
         {/* Animated Header */}
         <AnimatedHeader />
 
@@ -1172,27 +1204,27 @@ export function SupportSectionUltra() {
         >
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Zap className="h-5 w-5 text-yellow-500" />
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Zap className="h-4 sm:h-5 w-4 sm:w-5 text-yellow-500" />
                 Aksi Cepat
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setChatOpen(true)}
-                  className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-3 text-left transition-colors hover:from-green-100 hover:to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20"
+                  className="flex items-center gap-2 sm:gap-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 p-2.5 sm:p-3 text-left transition-colors hover:from-green-100 hover:to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
-                    <Bot className="h-5 w-5" />
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-green-500 text-white flex-shrink-0">
+                    <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm truncate">
                       Chat dengan AI
                     </div>
-                    <div className="text-xs text-gray-500">Jawaban instan</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">Jawaban instan</div>
                   </div>
                 </motion.button>
 
@@ -1200,16 +1232,16 @@ export function SupportSectionUltra() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setTicketModalOpen(true)}
-                  className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-3 text-left transition-colors hover:from-blue-100 hover:to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20"
+                  className="flex items-center gap-2 sm:gap-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5 sm:p-3 text-left transition-colors hover:from-blue-100 hover:to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white">
-                    <FileText className="h-5 w-5" />
+                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-blue-500 text-white flex-shrink-0">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 dark:text-white text-xs sm:text-sm truncate">
                       Buat Tiket
                     </div>
-                    <div className="text-xs text-gray-500">Support detail</div>
+                    <div className="text-[10px] sm:text-xs text-gray-500">Support detail</div>
                   </div>
                 </motion.button>
               </div>
@@ -1228,38 +1260,38 @@ export function SupportSectionUltra() {
         >
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Headphones className="h-5 w-5 text-purple-500" />
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Headphones className="h-4 sm:h-5 w-4 sm:w-5 text-purple-500" />
                 Hubungi Kami Langsung
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 sm:space-y-3">
               <a
                 href="tel:+6281234567890"
-                className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                className="flex items-center gap-2 sm:gap-3 rounded-lg border border-gray-200 p-2.5 sm:p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
               >
-                <PhoneCall className="h-5 w-5 text-green-500" />
-                <div className="flex-1">
-                  <div className="font-medium">+62 812-3456-7890</div>
-                  <div className="text-xs text-gray-500">
+                <PhoneCall className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">+62 812-3456-7890</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     Senin-Sabtu, 09:00-21:00 WIB
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
               </a>
 
               <a
                 href="mailto:support@lumakara.com"
-                className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                className="flex items-center gap-2 sm:gap-3 rounded-lg border border-gray-200 p-2.5 sm:p-3 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
               >
-                <Mail className="h-5 w-5 text-blue-500" />
-                <div className="flex-1">
-                  <div className="font-medium">support@lumakara.com</div>
-                  <div className="text-xs text-gray-500">
+                <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">support@lumakara.com</div>
+                  <div className="text-[10px] sm:text-xs text-gray-500">
                     Response dalam 2-4 jam
                   </div>
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
               </a>
             </CardContent>
           </Card>
@@ -1272,14 +1304,14 @@ export function SupportSectionUltra() {
           transition={{ delay: 0.5 }}
           className="text-center"
         >
-          <p className="text-xs text-gray-400">
-            Ditenagai oleh Kimi AI • Selalu siap membantu Anda 24/7
+          <p className="text-[10px] sm:text-xs text-gray-400">
+            Ditenagai oleh GPT-4o • Selalu siap membantu Anda 24/7
           </p>
         </motion.div>
       </div>
 
-      {/* Kimi AI Chat Interface - Floating Widget */}
-      <KimiChatInterface
+      {/* AI Chat Interface - Floating Widget */}
+      <AIChatInterface
         products={products}
         isOpen={chatOpen}
         onOpen={() => setChatOpen(true)}

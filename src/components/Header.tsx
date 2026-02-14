@@ -156,7 +156,7 @@ export function Header({ onMenuClick, onSearchClick }: HeaderProps) {
                               onChange={() => toggleItemSelection(index)}
                               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
-                            <img src={item.image} alt={item.title} className="w-16 h-16 object-cover rounded-lg" />
+                            <img src={item.image} alt={item.title} className="w-16 h-16 object-cover rounded-lg" loading="lazy" />
                             <div className="flex-1 min-w-0">
                               <p className={`font-medium text-sm truncate ${isDarkMode ? 'text-white' : ''}`}>{item.title}</p>
                               <p className="text-xs text-gray-500">{item.tier}</p>

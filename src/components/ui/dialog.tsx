@@ -116,14 +116,20 @@ function DialogTitle({
 
 function DialogDescription({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  // Ensure children is never empty to prevent Radix UI warning
+  const content = children || <span className="sr-only">Dialog description</span>;
+  
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn("text-muted-foreground text-sm", className)}
       {...props}
-    />
+    >
+      {content}
+    </DialogPrimitive.Description>
   )
 }
 

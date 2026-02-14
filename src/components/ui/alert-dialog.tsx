@@ -105,14 +105,20 @@ function AlertDialogTitle({
 
 function AlertDialogDescription({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  // Ensure children is never empty to prevent Radix UI warning
+  const content = children || <span className="sr-only">Alert description</span>;
+  
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
       className={cn("text-muted-foreground text-sm", className)}
       {...props}
-    />
+    >
+      {content}
+    </AlertDialogPrimitive.Description>
   )
 }
 

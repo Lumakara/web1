@@ -154,6 +154,7 @@ export function AdminProducts() {
                     src={product.icon}
                     alt={product.title}
                     className="w-16 h-16 object-cover rounded-lg"
+                    loading="lazy"
                   />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{product.title}</h3>

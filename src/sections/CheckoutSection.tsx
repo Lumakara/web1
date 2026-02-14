@@ -123,6 +123,7 @@ export function CheckoutSection() {
                       src={paymentData.qr_code_url} 
                       alt="QRIS Code" 
                       className="w-48 h-48"
+                      loading="lazy"
                     />
                   </div>
                   <p className="text-sm text-gray-500 mt-3">

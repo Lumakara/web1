@@ -309,7 +309,7 @@ const ProductGallery: React.FC<{ product: Product; isDarkMode: boolean }> = ({ p
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <img src={img} alt={`${product.title} - ${idx + 1}`} className="w-full h-full object-cover" />
+              <img src={img} alt={`${product.title} - ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
             </motion.button>
           ))}
         </div>
@@ -725,7 +725,7 @@ const RelatedProducts: React.FC<{
             whileTap={{ scale: 0.98 }}
           >
             <div className="aspect-square relative">
-              <img src={product.icon} alt={product.title} className="w-full h-full object-cover" />
+              <img src={product.icon} alt={product.title} className="w-full h-full object-cover" loading="lazy" />
               {product.discount_price && (
                 <Badge className="absolute top-2 left-2 bg-red-500 text-white">
                   -{Math.round(((product.base_price - product.discount_price) / product.base_price) * 100)}%

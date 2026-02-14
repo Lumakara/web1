@@ -613,6 +613,7 @@ function ProductsContent({ isDarkMode }: { isDarkMode: boolean }) {
                     src={product.image}
                     alt={product.title}
                     className="w-full h-32 object-cover"
+                    loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Button size="sm" variant="secondary" onClick={() => { setEditingProduct(product); setShowEditDialog(true); }}>

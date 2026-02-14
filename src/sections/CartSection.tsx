@@ -89,6 +89,7 @@ export function CartSection() {
                   src={item.image} 
                   alt={item.title}
                   className="w-20 h-20 object-cover rounded-lg"
+                  loading="lazy"
                 />
                 <div className="flex-1 min-w-0">
                   <h3 className={`font-medium text-sm truncate transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}>{item.title}</h3>

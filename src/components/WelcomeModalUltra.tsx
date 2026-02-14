@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
   Sparkles,
@@ -296,6 +296,12 @@ export function WelcomeModalUltra() {
           backdropFilter: 'blur(20px)',
         }}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Selamat Datang di Layanan Digital</DialogTitle>
+          <DialogDescription>
+            Tutorial interaktif untuk mengenal fitur-fitur aplikasi kami
+          </DialogDescription>
+        </DialogHeader>
         {/* CSS Animations */}
         <style>{`
           @keyframes float-up {
