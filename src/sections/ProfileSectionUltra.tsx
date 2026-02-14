@@ -615,7 +615,7 @@ function AuthLoadingState({ isDarkMode }: { isDarkMode: boolean }) {
 // Main Profile Section Component
 export function ProfileSectionUltra() {
   const { user, profile, isAuthenticated, isDarkMode } = useAppStore();
-  const { isInitialized } = useAuth();
+  
   const { signOut } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
@@ -661,12 +661,7 @@ export function ProfileSectionUltra() {
     (o) => o.status === 'pending' || o.status === 'processing'
   ).length;
 
-  // Show loading state while auth is not yet initialized
-  // The AuthProvider in App.tsx handles the actual auth initialization
-  // We wait until isInitialized is true before showing any auth-related UI
-  if (!isInitialized) {
-    return <AuthLoadingState isDarkMode={isDarkMode} />;
-  }
+
 
   // Show not logged in state only when auth is initialized and user is not authenticated
   if (!isAuthenticated) {

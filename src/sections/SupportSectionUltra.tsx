@@ -25,7 +25,6 @@ import {
   Paperclip,
   HelpCircle,
   Terminal,
-  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -906,7 +905,7 @@ function TicketFormModal({ isOpen, onClose }: TicketFormModalProps) {
   const [isSuccess, setIsSuccess] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
 
-  const [formData, setFormData] = useState<TicketFormData & { priority: string }>({
+  const [formData, setFormData] = useState<TicketFormData & { priority: 'low' | 'medium' | 'high' | 'urgent' }>({
     subject: '',
     category: '',
     email: profile?.email || '',
@@ -1037,7 +1036,7 @@ function TicketFormModal({ isOpen, onClose }: TicketFormModalProps) {
                 <Select
                   value={formData.priority}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, priority: value })
+                    setFormData({ ...formData, priority: value as 'low' | 'medium' | 'high' | 'urgent' })
                   }
                 >
                   <SelectTrigger>

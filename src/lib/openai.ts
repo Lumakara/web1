@@ -1331,6 +1331,21 @@ export class OpenAIService {
     }
   }
 
+  /**
+   * Send message with context (products, orders)
+   */
+  static async sendMessageWithContext(
+    messages: ChatMessage[],
+    products: Product[],
+    orderInfo?: OrderInfo,
+    options: SendMessageOptions = {}
+  ): Promise<ChatResponse> {
+    return this.sendMessage(messages, {
+      ...options,
+      context: { products, orderInfo }
+    });
+  }
+
   private static generateFallbackResponse(
     intent: DetectedIntent,
     options: SendMessageOptions,
@@ -1526,6 +1541,19 @@ export async function streamMessage(
   options?: SendMessageOptions
 ): Promise<ChatResponse> {
   return OpenAIService.streamMessage([{ role: 'user', content: message }], onChunk, options);
+}
+
+/**
+ * Send message with product context
+ * Stub function untuk compatibility
+ */
+export async function sendMessageWithContext(
+  messages: ChatMessage[],
+  products: Product[],
+  orderInfo?: OrderInfo,
+  options?: SendMessageOptions
+): Promise<ChatResponse> {
+  return OpenAIService.sendMessageWithContext(messages, products, orderInfo, options);
 }
 
 export function formatPrice(price: number): string {

@@ -1,125 +1,198 @@
+/**
+ * Firebase Configuration & Auth Service
+ * 
+ * Konfigurasi Firebase untuk:
+ * - Authentication (Email/Password, Google)
+ * - Firestore (opsional, untuk data tambahan)
+ * 
+ * TIDAK menggunakan Supabase untuk auth
+ */
+
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  signOut,
-  onAuthStateChanged,
+  GoogleAuthProvider,
   type User
 } from 'firebase/auth';
 
+// ============================================
+// Firebase Configuration
+// ============================================
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'your-api-key',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'your-auth-domain',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'your-project-id',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'your-storage-bucket',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || 'your-sender-id',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || 'your-app-id'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
 };
+
+// ============================================
+// Initialize Firebase
+// ============================================
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
 
-// Configure Google Provider
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
+// Enable emulator untuk development (opsional)
+// if (import.meta.env.DEV) {
+//   connectAuthEmulator(auth, 'http://localhost:9099');
+// }
+
+// ============================================
+// Auth User Interface
+// ============================================
 
 export interface AuthUser {
   uid: string;
-  email: string | null;
-  displayName: string | null;
+  email: string;
+  displayName: string;
   photoURL: string | null;
   phoneNumber: string | null;
+  emailVerified?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string;
 }
 
+// ============================================
+// Helper Functions
+// ============================================
+
+/**
+ * Convert Firebase User ke AuthUser
+ */
+export function convertFirebaseUser(user: User): AuthUser {
+  return {
+    uid: user.uid,
+    email: user.email || '',
+    displayName: user.displayName || user.email?.split('@')[0] || 'Pengguna',
+    photoURL: user.photoURL,
+    phoneNumber: user.phoneNumber,
+    emailVerified: user.emailVerified,
+    createdAt: user.metadata?.creationTime,
+    lastLoginAt: user.metadata?.lastSignInTime,
+  };
+}
+
+// ============================================
+// Firebase Auth Service
+// ============================================
+
 export const FirebaseAuth = {
-  // Get current user
+  /**
+   * Get current authenticated user
+   */
   getCurrentUser(): User | null {
     return auth.currentUser;
   },
 
-  // Listen to auth state changes
-  onAuthStateChanged(callback: (user: User | null) => void) {
-    return onAuthStateChanged(auth, callback);
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    return auth.currentUser !== null;
   },
 
-  // Sign in with Google
-  async signInWithGoogle(): Promise<AuthUser> {
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        phoneNumber: user.phoneNumber
-      };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to sign in with Google');
-    }
+  /**
+   * Get current user ID
+   */
+  getCurrentUserId(): string | null {
+    return auth.currentUser?.uid || null;
   },
 
-  // Sign in with Email & Password
-  async signInWithEmail(email: string, password: string): Promise<AuthUser> {
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      const user = result.user;
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        phoneNumber: user.phoneNumber
-      };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to sign in');
-    }
+  /**
+   * Get auth token
+   */
+  async getToken(): Promise<string | null> {
+    const user = auth.currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
   },
 
-  // Register with Email & Password
-  async registerWithEmail(email: string, password: string, displayName: string): Promise<AuthUser> {
-    try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      const user = result.user;
-      
-      // Update profile with display name
-      await updateProfile(user, { displayName });
-      
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        phoneNumber: user.phoneNumber
-      };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to register');
-    }
+  /**
+   * Check if email is verified
+   */
+  isEmailVerified(): boolean {
+    return auth.currentUser?.emailVerified || false;
   },
 
-  // Sign out
-  async signOut(): Promise<void> {
-    try {
-      await signOut(auth);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to sign out');
+  /**
+   * Reload current user
+   */
+  async reloadUser(): Promise<void> {
+    const user = auth.currentUser;
+    if (user) {
+      await user.reload();
     }
   },
+};
 
-  // Update user profile
-  async updateProfile(updates: { displayName?: string; photoURL?: string }): Promise<void> {
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('No user logged in');
-      await updateProfile(user, updates);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to update profile');
-    }
+// ============================================
+// Google Provider Setup
+// ============================================
+
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+// Add scopes jika diperlukan
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
+
+// ============================================
+// Error Handling Helpers
+// ============================================
+
+export const FirebaseErrorCodes = {
+  // Auth Errors
+  INVALID_EMAIL: 'auth/invalid-email',
+  USER_DISABLED: 'auth/user-disabled',
+  USER_NOT_FOUND: 'auth/user-not-found',
+  WRONG_PASSWORD: 'auth/wrong-password',
+  EMAIL_ALREADY_IN_USE: 'auth/email-already-in-use',
+  WEAK_PASSWORD: 'auth/weak-password',
+  INVALID_CREDENTIAL: 'auth/invalid-credential',
+  POPUP_CLOSED: 'auth/popup-closed-by-user',
+  POPUP_BLOCKED: 'auth/popup-blocked',
+  NETWORK_ERROR: 'auth/network-request-failed',
+  TOO_MANY_REQUESTS: 'auth/too-many-requests',
+  
+  // Custom error messages dalam Bahasa Indonesia
+  getErrorMessage(code: string): string {
+    const messages: Record<string, string> = {
+      [this.INVALID_EMAIL]: 'Format email tidak valid',
+      [this.USER_DISABLED]: 'Akun ini telah dinonaktifkan',
+      [this.USER_NOT_FOUND]: 'Email tidak terdaftar',
+      [this.WRONG_PASSWORD]: 'Password salah',
+      [this.EMAIL_ALREADY_IN_USE]: 'Email sudah terdaftar',
+      [this.WEAK_PASSWORD]: 'Password terlalu lemah (minimal 6 karakter)',
+      [this.INVALID_CREDENTIAL]: 'Email atau password salah',
+      [this.POPUP_CLOSED]: 'Login dibatalkan',
+      [this.POPUP_BLOCKED]: 'Popup diblokir browser',
+      [this.NETWORK_ERROR]: 'Gagal terhubung ke server',
+      [this.TOO_MANY_REQUESTS]: 'Terlalu banyak percobaan, coba lagi nanti',
+    };
+    return messages[code] || 'Terjadi kesalahan';
   }
 };
+
+// ============================================
+// Check Configuration
+// ============================================
+
+export function isFirebaseConfigured(): boolean {
+  return !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId
+  );
+}
+
+// Log configuration status
+if (import.meta.env.DEV) {
+  console.log('[Firebase] Configured:', isFirebaseConfigured());
+}
+
+export default FirebaseAuth;

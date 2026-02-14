@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Chrome, Github, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Chrome, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,39 +9,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/appStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-// Facebook icon component (not available in lucide-react)
-function FacebookIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-    </svg>
-  );
-}
+import { isFirebaseConfigured } from '@/lib/firebase';
 
 export function AuthSection() {
-  const { signInWithGoogle, signInWithGitHub, signInWithFacebook, signInWithEmail, registerWithEmail, isLoading } = useAuth();
+  const { 
+    signInWithGoogle, 
+    signInWithEmail, 
+    registerWithEmail, 
+    isLoading 
+  } = useAuth();
+  
   const { isDarkMode } = useAppStore();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Login form
+  // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
-  // Register form
+  // Register form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
+
+  // Check if Firebase is configured
+  const firebaseReady = isFirebaseConfigured();
 
   const handleGoogleSignIn = async () => {
     try {
@@ -49,27 +45,8 @@ export function AuthSection() {
       await signInWithGoogle();
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Gagal masuk dengan Google');
-    }
-  };
-
-  const handleGitHubSignIn = async () => {
-    try {
-      setError(null);
-      await signInWithGitHub();
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Gagal masuk dengan GitHub');
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    try {
-      setError(null);
-      await signInWithFacebook();
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'Gagal masuk dengan Facebook');
+      // Error sudah ditampilkan via toast di useAuth
+      console.error('Google sign in error:', err);
     }
   };
 
@@ -80,7 +57,8 @@ export function AuthSection() {
       await signInWithEmail(loginEmail, loginPassword);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Email atau password salah');
+      // Error sudah ditampilkan via toast di useAuth
+      console.error('Login error:', err);
     }
   };
 
@@ -90,14 +68,52 @@ export function AuthSection() {
       setError('Anda harus menyetujui syarat dan ketentuan');
       return;
     }
+    if (regPassword.length < 6) {
+      setError('Password minimal 6 karakter');
+      return;
+    }
     try {
       setError(null);
-      await registerWithEmail(regEmail, regPassword, regName, regPhone);
+      await registerWithEmail(regEmail, regPassword, regName);
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Gagal mendaftar');
+      // Error sudah ditampilkan via toast di useAuth
+      console.error('Register error:', err);
     }
   };
+
+  // Warning jika Firebase belum dikonfigurasi
+  if (!firebaseReady) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center p-4",
+        isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-orange-50"
+      )}>
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">
+              Firebase Belum Dikonfigurasi
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Silakan konfigurasi Firebase terlebih dahulu di file .env
+            </p>
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg text-left text-sm font-mono mb-4 overflow-x-auto">
+              <p className="text-red-500"># Tambahkan di .env:</p>
+              <p>VITE_FIREBASE_API_KEY=your_api_key</p>
+              <p>VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com</p>
+              <p>VITE_FIREBASE_PROJECT_ID=your_project_id</p>
+            </div>
+            <Link to="/">
+              <Button className="w-full">Kembali ke Beranda</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -157,39 +173,19 @@ export function AuthSection() {
                 </div>
               )}
 
-              {/* OAuth Sign In Buttons */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full transition-colors",
-                    isDarkMode && "bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-                  )}
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                  title="Google"
-                >
-                  <Chrome className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full hover:bg-gray-900 hover:text-white"
-                  onClick={handleGitHubSignIn}
-                  disabled={isLoading}
-                  title="GitHub"
-                >
-                  <Github className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full bg-[#1877F2] text-white border-[#1877F2] hover:bg-[#166fe5] hover:border-[#166fe5]"
-                  onClick={handleFacebookSignIn}
-                  disabled={isLoading}
-                  title="Facebook"
-                >
-                  <FacebookIcon className="h-5 w-5" />
-                </Button>
-              </div>
+              {/* Google Sign In */}
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full mb-4 transition-colors",
+                  isDarkMode && "bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                )}
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+              >
+                <Chrome className="h-5 w-5 mr-2" />
+                Lanjutkan dengan Google
+              </Button>
 
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center">
@@ -202,7 +198,7 @@ export function AuthSection() {
                   <span className={cn(
                     "px-2 transition-colors duration-300",
                     isDarkMode ? "bg-gray-800 text-gray-400" : "bg-white text-gray-500"
-                  )}>atau</span>
+                  )}>atau dengan email</span>
                 </div>
               </div>
 
@@ -345,14 +341,14 @@ export function AuthSection() {
                       <Input
                         id="reg-password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Minimal 8 karakter"
+                        placeholder="Minimal 6 karakter"
                         className={cn(
                           "pl-10 pr-10 transition-colors",
                           isDarkMode && "bg-gray-700 border-gray-600 text-white placeholder:text-gray-500"
                         )}
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
-                        minLength={8}
+                        minLength={6}
                         required
                       />
                       <button
@@ -444,3 +440,5 @@ export function AuthSection() {
     </div>
   );
 }
+
+export default AuthSection;

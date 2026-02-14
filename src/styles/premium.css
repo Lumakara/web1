@@ -3,6 +3,10 @@
  * Modern, professional, and premium design system
  */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ============================================
    BASE & SCROLL BEHAVIOR
    ============================================ */

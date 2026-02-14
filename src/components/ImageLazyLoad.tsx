@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback, createContext, useContext, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 // ============================================
