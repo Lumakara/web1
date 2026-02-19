@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mvvcpwghdyzlgghupizw.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_qeYe4rySmIQqThZOgWWbMQ_s8uIV1TE';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''; 
+
+// Validate configuration
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('[Supabase] Configuration missing. Some features may not work properly.');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 

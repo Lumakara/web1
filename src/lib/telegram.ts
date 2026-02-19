@@ -1,10 +1,17 @@
 import axios from 'axios';
 
 // Telegram Bot Configuration
-const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '8010136953:AAHnKUy_0jgJN5grZIgSDzbtTJznfqq5was';
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || '1841202339';
+const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || '';
 
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
+const TELEGRAM_API_URL = TELEGRAM_BOT_TOKEN 
+  ? `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}` 
+  : '';
+
+// Check if Telegram is configured
+function isConfigured(): boolean {
+  return !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID);
+}
 
 export interface TicketNotification {
   ticketId: string;
@@ -27,6 +34,11 @@ export interface OrderNotification {
 export const TelegramBot = {
   // Send support ticket notification to Telegram
   async sendTicketNotification(ticket: TicketNotification): Promise<void> {
+    if (!isConfigured()) {
+      console.log('[Telegram] Notification skipped - bot not configured');
+      return;
+    }
+    
     try {
       const message = `
 🎫 *TICKET BARU DITERIMA*
@@ -61,6 +73,11 @@ Silakan segera ditindaklanjuti.
 
   // Send order notification to Telegram
   async sendOrderNotification(order: OrderNotification): Promise<void> {
+    if (!isConfigured()) {
+      console.log('[Telegram] Notification skipped - bot not configured');
+      return;
+    }
+    
     try {
       const itemsList = order.items.map(item => 
         `• ${item.title} (${item.tier}) x${item.quantity} - Rp ${item.price.toLocaleString('id-ID')}`
@@ -98,6 +115,11 @@ Segera proses pesanan ini.
 
   // Send payment notification to Telegram
   async sendPaymentNotification(orderId: string, amount: number, paymentMethod: string, status: string): Promise<void> {
+    if (!isConfigured()) {
+      console.log('[Telegram] Notification skipped - bot not configured');
+      return;
+    }
+    
     try {
       const statusEmoji = status === 'success' ? '✅' : '❌';
       const message = `
@@ -128,6 +150,11 @@ ${statusEmoji} *NOTIFIKASI PEMBAYARAN*
 
   // Send custom message to Telegram
   async sendCustomMessage(message: string): Promise<void> {
+    if (!isConfigured()) {
+      console.log('[Telegram] Message skipped - bot not configured');
+      return;
+    }
+    
     try {
       const response = await axios.post(`${TELEGRAM_API_URL}/sendMessage`, {
         chat_id: TELEGRAM_CHAT_ID,
@@ -145,6 +172,11 @@ ${statusEmoji} *NOTIFIKASI PEMBAYARAN*
 
   // Test bot connection
   async testConnection(): Promise<boolean> {
+    if (!isConfigured()) {
+      console.log('[Telegram] Connection test skipped - bot not configured');
+      return false;
+    }
+    
     try {
       const response = await axios.get(`${TELEGRAM_API_URL}/getMe`);
       return response.data.ok;

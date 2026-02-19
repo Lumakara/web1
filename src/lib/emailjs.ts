@@ -1,10 +1,19 @@
 import emailjs from '@emailjs/browser';
 
 // EmailJS Configuration
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_5cy0pte';
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_nf642dj';
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'Y50IKgvUerHPeqTwt';
-const EMAILJS_OWNER_EMAIL = import.meta.env.VITE_EMAILJS_OWNER_EMAIL || '';
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_OWNER_EMAIL = import.meta.env.VITE_OWNER_EMAIL || ''; 
+
+// Validate configuration on init
+function validateConfig(): boolean {
+  const isValid = !!(EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY);
+  if (!isValid) {
+    console.warn('[EmailJS] Configuration incomplete. Email notifications will be disabled.');
+  }
+  return isValid;
+}
 
 // ============================================
 // Email Data Interfaces
@@ -193,6 +202,7 @@ export const EmailService = {
    * Initialize EmailJS
    */
   init(): void {
+    if (!validateConfig()) return;
     emailjs.init(EMAILJS_PUBLIC_KEY);
   },
 
@@ -203,6 +213,13 @@ export const EmailService = {
     templateParams: Record<string, unknown>,
     templateName: string
   ): Promise<boolean> {
+    // Skip if config is invalid
+    if (!validateConfig()) {
+      console.log(`[EmailJS] ${templateName} skipped - config incomplete`);
+      logEmailFallback(templateName, templateParams);
+      return false;
+    }
+    
     try {
       await emailjs.send(
         EMAILJS_SERVICE_ID,
