@@ -156,12 +156,24 @@
         if (loader) {
           setTimeout(() => {
             loader.classList.add('hidden');
+            document.body.classList.add('app-ready');
             setTimeout(() => {
               loader.style.display = 'none';
             }, 300);
-          }, 500);
+          }, 800);
         }
       });
+      
+      // Fallback: Force hide loader after 5 seconds
+      setTimeout(() => {
+        const loader = document.getElementById('initial-loader');
+        if (loader && loader.style.display !== 'none') {
+          loader.classList.add('hidden');
+          document.body.classList.add('app-ready');
+          loader.style.display = 'none';
+          console.log('[App] Loader force hidden after timeout');
+        }
+      }, 5000);
       
       // Handle online/offline status
       window.addEventListener('online', () => {

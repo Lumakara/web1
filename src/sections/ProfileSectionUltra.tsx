@@ -7,7 +7,6 @@ import {
   Edit2,
   Camera,
   ChevronRight,
-  RefreshCw,
   ShoppingBag,
   CheckCircle2,
   Clock,
@@ -15,633 +14,726 @@ import {
   CreditCard,
   Sparkles,
   Loader2,
+  MapPin,
+  Phone,
+  Mail,
+  Calendar,
+  Shield,
+  Award,
+  TrendingUp,
+  Heart,
+  Settings,
+  Bell,
+  Lock,
+  Trash2,
+  ChevronLeft,
+  QrCode,
+  Share2,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppStore } from '@/store/appStore';
 import { OrderService } from '@/lib/supabase';
 import type { Order } from '@/lib/supabase';
-import { SettingsTab } from '@/components/SettingsTab';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useCountUp } from '@/lib/animations';
 
-// Animated counter component
-function AnimatedCounter({ value, duration = 1500 }: { value: number; duration?: number }) {
-  const { count, startAnimation } = useCountUp(value, duration);
-  const [hasStarted, setHasStarted] = useState(false);
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { 
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
 
-  useEffect(() => {
-    if (!hasStarted) {
-      setHasStarted(true);
-      startAnimation();
-    }
-  }, [hasStarted, startAnimation]);
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 24 }
+  }
+};
 
-  useEffect(() => {
-    setHasStarted(false);
-  }, [value]);
-
-  return <span>{count}</span>;
-}
-
-// Pull to refresh simulation
-function usePullToRefresh(onRefresh: () => Promise<void>) {
-  const [isPulling, setIsPulling] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const startYRef = useState<{ current: number }>({ current: 0 })[0];
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (window.scrollY === 0) {
-      startYRef.current = e.touches[0].clientY;
-      setIsPulling(true);
-    }
-  }, [startYRef]);
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isPulling) return;
-    const currentY = e.touches[0].clientY;
-    const distance = Math.max(0, currentY - startYRef.current);
-    const dampedDistance = Math.min(distance * 0.5, 100);
-    setPullDistance(dampedDistance);
-  }, [isPulling, startYRef]);
-
-  const onTouchEnd = useCallback(async () => {
-    if (!isPulling) return;
-    setIsPulling(false);
-    
-    if (pullDistance > 60) {
-      setIsRefreshing(true);
-      await onRefresh();
-      setIsRefreshing(false);
-    }
-    setPullDistance(0);
-  }, [isPulling, pullDistance, onRefresh]);
-
-  return { isPulling, pullDistance, isRefreshing, onTouchStart, onTouchMove, onTouchEnd };
-}
-
-// Stat Card Component
-function StatCard({
-  icon: Icon,
-  value,
-  label,
+// Quick Stats Card
+function QuickStatCard({ 
+  icon: Icon, 
+  value, 
+  label, 
+  trend,
   color,
   delay = 0,
-  isDarkMode,
-}: {
-  icon: React.ElementType;
-  value: number;
+  isDarkMode 
+}: { 
+  icon: React.ElementType; 
+  value: string | number; 
   label: string;
+  trend?: string;
   color: string;
   delay?: number;
   isDarkMode: boolean;
 }) {
-  const [isPressed, setIsPressed] = useState(false);
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.5, ease: [0.175, 0.885, 0.32, 1.275] }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: 'spring' }}
       whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      onTouchStart={() => setIsPressed(true)}
-      onTouchEnd={() => setIsPressed(false)}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      onMouseLeave={() => setIsPressed(false)}
+      className={cn(
+        "p-4 rounded-2xl border transition-all cursor-pointer",
+        isDarkMode 
+          ? "bg-gray-800/50 border-gray-700 hover:border-gray-600" 
+          : "bg-white border-gray-200 hover:border-gray-300 shadow-sm"
+      )}
     >
-      <Card
-        className={cn(
-          'border-0 shadow-lg overflow-hidden transition-all duration-200',
-          isDarkMode
-            ? 'bg-gray-800/80 border border-white/10'
-            : 'bg-white/90 border border-black/5',
-          isPressed && 'scale-[0.98]'
+      <div className="flex items-start justify-between">
+        <div className={cn("p-2.5 rounded-xl", color)}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        {trend && (
+          <span className={cn(
+            "text-xs font-medium px-2 py-1 rounded-full",
+            trend.startsWith('+') 
+              ? "bg-green-100 text-green-700" 
+              : "bg-gray-100 text-gray-600"
+          )}>
+            {trend}
+          </span>
         )}
-      >
-        <CardContent className="p-4 flex items-center gap-3">
-          <motion.div
-            whileHover={{ rotate: 5, scale: 1.1 }}
-            className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center',
-              color
-            )}
-          >
-            <Icon className="w-6 h-6 text-white" />
-          </motion.div>
-          <div>
-            <p className={cn(
-              'text-2xl font-bold',
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              <AnimatedCounter value={value} />
-            </p>
-            <p className={cn(
-              'text-xs',
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            )}>
-              {label}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
+      <p className={cn(
+        "text-2xl font-bold mt-3",
+        isDarkMode ? "text-white" : "text-gray-900"
+      )}>
+        {value}
+      </p>
+      <p className={cn(
+        "text-sm",
+        isDarkMode ? "text-gray-400" : "text-gray-500"
+      )}>
+        {label}
+      </p>
     </motion.div>
   );
 }
 
-// Order Detail Dialog
-function OrderDetailDialog({
-  order,
-  isOpen,
-  onClose,
+// Order Status Badge
+function OrderStatusBadge({ status, isDarkMode }: { status: string; isDarkMode: boolean }) {
+  const configs: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
+    pending: { 
+      color: 'text-yellow-700', 
+      bg: 'bg-yellow-100', 
+      label: 'Menunggu',
+      icon: Clock 
+    },
+    paid: { 
+      color: 'text-blue-700', 
+      bg: 'bg-blue-100', 
+      label: 'Dibayar',
+      icon: CreditCard 
+    },
+    processing: { 
+      color: 'text-purple-700', 
+      bg: 'bg-purple-100', 
+      label: 'Diproses',
+      icon: Loader2 
+    },
+    completed: { 
+      color: 'text-green-700', 
+      bg: 'bg-green-100', 
+      label: 'Selesai',
+      icon: CheckCircle2 
+    },
+    cancelled: { 
+      color: 'text-red-700', 
+      bg: 'bg-red-100', 
+      label: 'Dibatalkan',
+      icon: X 
+    },
+  };
+
+  const config = configs[status] || configs.pending;
+  const Icon = config.icon;
+
+  return (
+    <div className={cn(
+      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+      config.bg,
+      config.color
+    )}>
+      <Icon className="w-3.5 h-3.5" />
+      {config.label}
+    </div>
+  );
+}
+
+// Order Card Component
+function OrderCard({ 
+  order, 
+  onClick, 
   isDarkMode,
-}: {
-  order: Order | null;
-  isOpen: boolean;
-  onClose: () => void;
+  index 
+}: { 
+  order: Order; 
+  onClick: () => void; 
+  isDarkMode: boolean;
+  index: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onClick}
+      className={cn(
+        "p-4 rounded-2xl border cursor-pointer transition-all",
+        isDarkMode 
+          ? "bg-gray-800/50 border-gray-700 hover:border-gray-600" 
+          : "bg-white border-gray-200 hover:border-gray-300 shadow-sm"
+      )}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className={cn(
+            "text-sm font-medium",
+            isDarkMode ? "text-gray-300" : "text-gray-600"
+          )}>
+            #{order.id.slice(0, 8).toUpperCase()}
+          </p>
+          <p className={cn(
+            "text-xs mt-0.5",
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          )}>
+            {new Date(order.created_at || '').toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
+        <OrderStatusBadge status={order.status} isDarkMode={isDarkMode} />
+      </div>
+
+      <div className="space-y-2 mb-3">
+        {order.items.slice(0, 2).map((item, idx) => (
+          <div key={idx} className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center",
+              isDarkMode ? "bg-gray-700" : "bg-gray-100"
+            )}>
+              <Package className="w-5 h-5 text-gray-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={cn(
+                "text-sm font-medium truncate",
+                isDarkMode ? "text-white" : "text-gray-900"
+              )}>
+                {item.title}
+              </p>
+              <p className={cn(
+                "text-xs",
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              )}>
+                {item.tier} × {item.quantity}
+              </p>
+            </div>
+          </div>
+        ))}
+        {order.items.length > 2 && (
+          <p className={cn(
+            "text-xs pl-13",
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          )}>
+            +{order.items.length - 2} item lainnya
+          </p>
+        )}
+      </div>
+
+      <div className={cn(
+        "flex items-center justify-between pt-3 border-t",
+        isDarkMode ? "border-gray-700" : "border-gray-100"
+      )}>
+        <span className={cn(
+          "text-sm",
+          isDarkMode ? "text-gray-400" : "text-gray-500"
+        )}>
+          Total
+        </span>
+        <div className="flex items-center gap-2">
+          <span className={cn(
+            "font-bold",
+            isDarkMode ? "text-blue-400" : "text-blue-600"
+          )}>
+            Rp {order.total_amount.toLocaleString('id-ID')}
+          </span>
+          <ChevronRight className={cn(
+            "w-4 h-4",
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          )} />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Order Detail Modal
+function OrderDetailModal({ 
+  order, 
+  isOpen, 
+  onClose, 
+  isDarkMode 
+}: { 
+  order: Order | null; 
+  isOpen: boolean; 
+  onClose: () => void; 
   isDarkMode: boolean;
 }) {
   if (!order) return null;
 
-  const statusConfig = {
-    pending: { color: 'bg-yellow-500', label: 'Menunggu', icon: Clock },
-    paid: { color: 'bg-blue-500', label: 'Dibayar', icon: CreditCard },
-    processing: { color: 'bg-purple-500', label: 'Diproses', icon: RefreshCw },
-    completed: { color: 'bg-green-500', label: 'Selesai', icon: CheckCircle2 },
-    cancelled: { color: 'bg-red-500', label: 'Dibatalkan', icon: X },
-  };
-
-  const config = statusConfig[order.status];
-  const StatusIcon = config.icon;
+  const timeline = [
+    { status: 'pending', label: 'Pesanan Dibuat', date: order.created_at },
+    { status: 'paid', label: 'Pembayaran Diterima', date: order.status !== 'pending' ? order.created_at : null },
+    { status: 'processing', label: 'Sedang Diproses', date: ['processing', 'completed'].includes(order.status) ? order.created_at : null },
+    { status: 'completed', label: 'Pesanan Selesai', date: order.status === 'completed' ? order.created_at : null },
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent
-        className={cn(
-          'max-w-lg p-0 overflow-hidden border-0',
-          isDarkMode
-            ? 'bg-gray-900 border border-white/10'
-            : 'bg-white'
-        )}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {/* Header */}
-          <div
-            className={cn(
-              'p-6 pb-4',
-              isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50/50'
-            )}
-          >
+      <DialogContent className={cn(
+        "max-w-lg max-h-[90vh] overflow-y-auto p-0 gap-0",
+        isDarkMode ? "bg-gray-900 border-gray-800" : "bg-white"
+      )}>
+        {/* Header */}
+        <div className={cn(
+          "p-6 border-b",
+          isDarkMode ? "border-gray-800" : "border-gray-100"
+        )}>
+          <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
                 <p className={cn(
-                  'text-sm',
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  "text-sm",
+                  isDarkMode ? "text-gray-400" : "text-gray-500"
                 )}>
                   Order #{order.id.slice(0, 8).toUpperCase()}
                 </p>
-                <h2 className={cn(
-                  'text-xl font-bold mt-1',
-                  isDarkMode ? 'text-white' : 'text-gray-900'
+                <DialogTitle className={cn(
+                  "text-xl mt-1",
+                  isDarkMode ? "text-white" : "text-gray-900"
                 )}>
                   Detail Pesanan
-                </h2>
+                </DialogTitle>
               </div>
-              <Badge
-                className={cn(
-                  'px-3 py-1 text-xs font-medium text-white border-0',
-                  config.color
-                )}
-              >
-                <StatusIcon className="w-3 h-3 mr-1" />
-                {config.label}
-              </Badge>
+              <OrderStatusBadge status={order.status} isDarkMode={isDarkMode} />
+            </div>
+          </DialogHeader>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Timeline */}
+          <div className="space-y-4">
+            <h4 className={cn(
+              "text-sm font-semibold",
+              isDarkMode ? "text-white" : "text-gray-900"
+            )}>
+              Status Pesanan
+            </h4>
+            <div className="space-y-0">
+              {timeline.map((step, idx) => {
+                const isActive = step.date !== null;
+                const isLast = idx === timeline.length - 1;
+                
+                return (
+                  <div key={step.status} className="flex gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full border-2",
+                        isActive 
+                          ? "bg-blue-500 border-blue-500" 
+                          : isDarkMode ? "bg-gray-800 border-gray-600" : "bg-gray-100 border-gray-300"
+                      )} />
+                      {!isLast && (
+                        <div className={cn(
+                          "w-0.5 h-8 mt-1",
+                          isActive && timeline[idx + 1]?.date
+                            ? "bg-blue-500"
+                            : isDarkMode ? "bg-gray-700" : "bg-gray-200"
+                        )} />
+                      )}
+                    </div>
+                    <div className="pb-6">
+                      <p className={cn(
+                        "text-sm font-medium",
+                        isActive 
+                          ? isDarkMode ? "text-white" : "text-gray-900"
+                          : isDarkMode ? "text-gray-500" : "text-gray-400"
+                      )}>
+                        {step.label}
+                      </p>
+                      {step.date && (
+                        <p className={cn(
+                          "text-xs mt-0.5",
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        )}>
+                          {new Date(step.date).toLocaleString('id-ID')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Items */}
+          <Separator className={isDarkMode ? "bg-gray-800" : "bg-gray-100"} />
+
+          {/* Items */}
+          <div className="space-y-4">
+            <h4 className={cn(
+              "text-sm font-semibold",
+              isDarkMode ? "text-white" : "text-gray-900"
+            )}>
+              Item Pesanan
+            </h4>
             <div className="space-y-3">
-              <h3 className={cn(
-                'text-sm font-semibold',
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              )}>
-                Item Pesanan
-              </h3>
               {order.items.map((item, idx) => (
-                <motion.div
+                <div 
                   key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
                   className={cn(
-                    'flex items-center justify-between p-3 rounded-xl',
-                    isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'
+                    "flex items-center gap-3 p-3 rounded-xl",
+                    isDarkMode ? "bg-gray-800" : "bg-gray-50"
                   )}
                 >
-                  <div>
+                  <div className={cn(
+                    "w-12 h-12 rounded-lg flex items-center justify-center",
+                    isDarkMode ? "bg-gray-700" : "bg-white"
+                  )}>
+                    <Package className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <div className="flex-1">
                     <p className={cn(
-                      'font-medium text-sm',
-                      isDarkMode ? 'text-white' : 'text-gray-900'
+                      "font-medium",
+                      isDarkMode ? "text-white" : "text-gray-900"
                     )}>
                       {item.title}
                     </p>
                     <p className={cn(
-                      'text-xs',
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      "text-sm",
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
                     )}>
-                      Tier: {item.tier}
+                      {item.tier} × {item.quantity}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className={cn(
-                      'font-semibold text-sm',
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    )}>
-                      Rp {item.price.toLocaleString('id-ID')}
-                    </p>
-                    <p className={cn(
-                      'text-xs',
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    )}>
-                      x{item.quantity}
-                    </p>
-                  </div>
-                </motion.div>
+                  <p className={cn(
+                    "font-semibold",
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  )}>
+                    Rp {(item.price * item.quantity).toLocaleString('id-ID')}
+                  </p>
+                </div>
               ))}
             </div>
+          </div>
 
-            {/* Divider */}
-            <div className={cn(
-              'h-px',
-              isDarkMode ? 'bg-white/10' : 'bg-gray-200'
-            )} />
+          <Separator className={isDarkMode ? "bg-gray-800" : "bg-gray-100"} />
 
-            {/* Order Info */}
-            <div className="space-y-3">
+          {/* Payment Summary */}
+          <div className="space-y-3">
+            <h4 className={cn(
+              "text-sm font-semibold",
+              isDarkMode ? "text-white" : "text-gray-900"
+            )}>
+              Ringkasan Pembayaran
+            </h4>
+            <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                  Tanggal
-                </span>
-                <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>
-                  {new Date(order.created_at || '').toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
+                <span className={isDarkMode ? "text-gray-400" : "text-gray-500"}>Subtotal</span>
+                <span className={isDarkMode ? "text-gray-300" : "text-gray-700"}>
+                  Rp {Math.floor(order.total_amount * 0.9).toLocaleString('id-ID')}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                  Metode Pembayaran
+                <span className={isDarkMode ? "text-gray-400" : "text-gray-500"}>PPN (10%)</span>
+                <span className={isDarkMode ? "text-gray-300" : "text-gray-700"}>
+                  Rp {Math.floor(order.total_amount * 0.1).toLocaleString('id-ID')}
                 </span>
-                <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className={isDarkMode ? "text-gray-400" : "text-gray-500"}>Metode</span>
+                <span className={isDarkMode ? "text-gray-300" : "text-gray-700"}>
                   {order.payment_method.toUpperCase()}
                 </span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                  Subtotal
-                </span>
-                <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>
-                  Rp {(order.total_amount * 0.9).toLocaleString('id-ID')}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
-                  PPN (10%)
-                </span>
-                <span className={isDarkMode ? 'text-gray-200' : 'text-gray-700'}>
-                  Rp {(order.total_amount * 0.1).toLocaleString('id-ID')}
-                </span>
-              </div>
-              <div className={cn(
-                'h-px',
-                isDarkMode ? 'bg-white/10' : 'bg-gray-200'
-              )} />
+              <Separator className={isDarkMode ? "bg-gray-800" : "bg-gray-100"} />
               <div className="flex justify-between">
                 <span className={cn(
-                  'font-semibold',
-                  isDarkMode ? 'text-white' : 'text-gray-900'
+                  "font-semibold",
+                  isDarkMode ? "text-white" : "text-gray-900"
                 )}>
                   Total
                 </span>
                 <span className={cn(
-                  'font-bold text-lg',
-                  isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  "font-bold text-lg",
+                  isDarkMode ? "text-blue-400" : "text-blue-600"
                 )}>
                   Rp {order.total_amount.toLocaleString('id-ID')}
                 </span>
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Footer */}
+        <div className={cn(
+          "p-6 border-t flex gap-3",
+          isDarkMode ? "border-gray-800" : "border-gray-100"
+        )}>
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={onClose}
+          >
+            Tutup
+          </Button>
+          <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+            <Share2 className="w-4 h-4 mr-2" />
+            Bagikan
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-// Order Card Component
-function OrderCard({
-  order,
-  onClick,
-  isDarkMode,
-  index,
-}: {
-  order: Order;
-  onClick: () => void;
-  isDarkMode: boolean;
-  index: number;
-}) {
-  const statusConfig: Record<string, { color: string; bg: string; label: string; icon: React.ElementType }> = {
-    pending: {
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bg: 'bg-yellow-100 dark:bg-yellow-500/20',
-      label: 'Menunggu',
-      icon: Clock,
-    },
-    paid: {
-      color: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-100 dark:bg-blue-500/20',
-      label: 'Dibayar',
-      icon: CreditCard,
-    },
-    processing: {
-      color: 'text-purple-600 dark:text-purple-400',
-      bg: 'bg-purple-100 dark:bg-purple-500/20',
-      label: 'Diproses',
-      icon: RefreshCw,
-    },
-    completed: {
-      color: 'text-green-600 dark:text-green-400',
-      bg: 'bg-green-100 dark:bg-green-500/20',
-      label: 'Selesai',
-      icon: CheckCircle2,
-    },
-    cancelled: {
-      color: 'text-red-600 dark:text-red-400',
-      bg: 'bg-red-100 dark:bg-red-500/20',
-      label: 'Dibatalkan',
-      icon: X,
-    },
-  };
-
-  const config = statusConfig[order.status] || statusConfig.pending;
-  const StatusIcon = config.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.4, ease: 'easeOut' }}
-      whileHover={{ scale: 1.01, y: -2 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={onClick}
-    >
-      <Card
-        className={cn(
-          'border-0 shadow-md cursor-pointer overflow-hidden transition-all duration-200 group',
-          isDarkMode
-            ? 'bg-gray-800/80 border border-white/10 hover:bg-gray-800'
-            : 'bg-white/90 border border-black/5 hover:bg-white'
-        )}
-      >
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className={cn(
-                'text-sm font-medium',
-                isDarkMode ? 'text-gray-300' : 'text-gray-600'
-              )}>
-                #{order.id.slice(0, 8).toUpperCase()}
-              </p>
-              <p className={cn(
-                'text-xs mt-0.5',
-                isDarkMode ? 'text-gray-500' : 'text-gray-400'
-              )}>
-                {new Date(order.created_at || '').toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </p>
-            </div>
-            <Badge
-              variant="secondary"
-              className={cn(
-                'px-2.5 py-1 text-xs font-medium border-0 flex items-center gap-1',
-                config.bg,
-                config.color
-              )}
-            >
-              <StatusIcon className="w-3 h-3" />
-              {config.label}
-            </Badge>
-          </div>
-
-          <div className="space-y-1.5 mb-3">
-            {order.items.slice(0, 2).map((item, idx) => (
-              <p
-                key={idx}
-                className={cn(
-                  'text-sm truncate',
-                  isDarkMode ? 'text-gray-200' : 'text-gray-700'
-                )}
-              >
-                {item.title}{' '}
-                <span className={isDarkMode ? 'text-gray-500' : 'text-gray-400'}>
-                  ({item.tier}) x{item.quantity}
-                </span>
-              </p>
-            ))}
-            {order.items.length > 2 && (
-              <p className={cn(
-                'text-xs',
-                isDarkMode ? 'text-gray-500' : 'text-gray-400'
-              )}>
-                +{order.items.length - 2} item lainnya
-              </p>
-            )}
-          </div>
-
-          <div className={cn(
-            'flex justify-between items-center pt-3 border-t',
-            isDarkMode ? 'border-white/10' : 'border-gray-100'
-          )}>
-            <span className={cn(
-              'text-xs',
-              isDarkMode ? 'text-gray-400' : 'text-gray-500'
-            )}>
-              Total
-            </span>
-            <div className="flex items-center gap-2">
-              <span className={cn(
-                'font-bold',
-                isDarkMode ? 'text-blue-400' : 'text-blue-600'
-              )}>
-                Rp {order.total_amount.toLocaleString('id-ID')}
-              </span>
-              <ChevronRight className={cn(
-                'w-4 h-4 transition-transform group-hover:translate-x-1',
-                isDarkMode ? 'text-gray-500' : 'text-gray-400'
-              )} />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-// Empty State Animation
-function EmptyOrdersState({ isDarkMode }: { isDarkMode: boolean }) {
+// Empty State
+function EmptyOrders({ isDarkMode }: { isDarkMode: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: [0.175, 0.885, 0.32, 1.275] }}
       className="flex flex-col items-center justify-center py-16 px-4"
     >
       <motion.div
         animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 3, repeat: Infinity }}
         className={cn(
-          'w-24 h-24 rounded-full flex items-center justify-center mb-6',
-          isDarkMode
-            ? 'bg-gradient-to-br from-blue-500/20 to-purple-500/20'
-            : 'bg-gradient-to-br from-blue-100 to-purple-100'
+          "w-24 h-24 rounded-full flex items-center justify-center mb-6",
+          isDarkMode 
+            ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20" 
+            : "bg-gradient-to-br from-blue-100 to-purple-100"
         )}
       >
-        <Package className={cn(
-          'w-12 h-12',
-          isDarkMode ? 'text-blue-400' : 'text-blue-500'
+        <ShoppingBag className={cn(
+          "w-12 h-12",
+          isDarkMode ? "text-blue-400" : "text-blue-500"
         )} />
       </motion.div>
       <h3 className={cn(
-        'text-lg font-semibold mb-2',
-        isDarkMode ? 'text-white' : 'text-gray-900'
+        "text-lg font-semibold mb-2",
+        isDarkMode ? "text-white" : "text-gray-900"
       )}>
         Belum Ada Pesanan
       </h3>
       <p className={cn(
-        'text-sm text-center max-w-xs mb-6',
-        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+        "text-sm text-center max-w-xs mb-6",
+        isDarkMode ? "text-gray-400" : "text-gray-500"
       )}>
-        Anda belum memiliki riwayat pesanan. Mulai berbelanja untuk melihat pesanan Anda di sini.
+        Mulai berbelanja untuk melihat riwayat pesanan Anda di sini
       </p>
       <Link to="/">
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Button
-            className={cn(
-              'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-lg',
-              'hover:shadow-xl transition-shadow'
-            )}
-          >
-            <ShoppingBag className="w-4 h-4 mr-2" />
-            Mulai Berbelanja
-          </Button>
-        </motion.div>
+        <Button className="bg-gradient-to-r from-blue-600 to-purple-600">
+          <ShoppingBag className="w-4 h-4 mr-2" />
+          Mulai Berbelanja
+        </Button>
       </Link>
     </motion.div>
   );
 }
 
-// Loading Skeleton
-function OrdersSkeleton({ isDarkMode }: { isDarkMode: boolean }) {
-  return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: i * 0.1 }}
-          className={cn(
-            'h-32 rounded-xl animate-pulse',
-            isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
-          )}
-        />
-      ))}
-    </div>
-  );
-}
+// Edit Profile Modal
+function EditProfileModal({
+  isOpen,
+  onClose,
+  isDarkMode,
+  user,
+  onSave
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode: boolean;
+  user: any;
+  onSave: (data: any) => void;
+}) {
+  const [formData, setFormData] = useState({
+    displayName: user?.displayName || '',
+    phone: '',
+    bio: '',
+    location: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
-// Loading State for Auth Check
-function AuthLoadingState({ isDarkMode }: { isDarkMode: boolean }) {
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSave(formData);
+    setIsSaving(false);
+    onClose();
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-[60vh] px-4"
-    >
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        className={cn(
-          'w-16 h-16 rounded-full flex items-center justify-center mb-4',
-          isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
-        )}
-      >
-        <Loader2 className={cn(
-          'h-8 w-8',
-          isDarkMode ? 'text-blue-400' : 'text-blue-600'
-        )} />
-      </motion.div>
-      <p className={cn(
-        'text-sm',
-        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className={cn(
+        "max-w-md",
+        isDarkMode ? "bg-gray-900 border-gray-800" : "bg-white"
       )}>
-        Memuat...
-      </p>
-    </motion.div>
+        <DialogHeader>
+          <DialogTitle className={cn(
+            isDarkMode ? "text-white" : "text-gray-900"
+          )}>
+            Edit Profil
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-4">
+          {/* Avatar Upload */}
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <Avatar className="w-24 h-24 border-4 border-blue-500/20">
+                <AvatarImage src={user?.photoURL} />
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                  {(user?.displayName || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <button className={cn(
+                "absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center border-2",
+                isDarkMode 
+                  ? "bg-gray-800 border-gray-700 text-gray-300" 
+                  : "bg-white border-gray-200 text-gray-600"
+              )}>
+                <Camera className="w-4 h-4" />
+              </button>
+            </div>
+            <p className={cn(
+              "text-xs mt-2",
+              isDarkMode ? "text-gray-400" : "text-gray-500"
+            )}>
+              Ketuk untuk ubah foto
+            </p>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className={isDarkMode ? "text-gray-300" : ""}>Nama Lengkap</Label>
+              <Input
+                value={formData.displayName}
+                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                className={cn(
+                  isDarkMode 
+                    ? "bg-gray-800 border-gray-700 text-white" 
+                    : ""
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className={isDarkMode ? "text-gray-300" : ""}>Nomor Telepon</Label>
+              <Input
+                placeholder="+62 xxx-xxxx-xxxx"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className={cn(
+                  isDarkMode 
+                    ? "bg-gray-800 border-gray-700 text-white" 
+                    : ""
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className={isDarkMode ? "text-gray-300" : ""}>Lokasi</Label>
+              <Input
+                placeholder="Kota, Indonesia"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className={cn(
+                  isDarkMode 
+                    ? "bg-gray-800 border-gray-700 text-white" 
+                    : ""
+                )}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className={isDarkMode ? "text-gray-300" : ""}>Bio</Label>
+              <Input
+                placeholder="Ceritakan sedikit tentang Anda"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                className={cn(
+                  isDarkMode 
+                    ? "bg-gray-800 border-gray-700 text-white" 
+                    : ""
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" onClick={onClose}>
+              Batal
+            </Button>
+            <Button 
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Simpan'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// Main Profile Section Component
+// Main Component
 export function ProfileSectionUltra() {
-  const { user, profile, isAuthenticated, isDarkMode } = useAppStore();
+  const { user, isAuthenticated, isDarkMode } = useAppStore();
+  const { signOut, updateProfile } = useAuth();
   
-  const { signOut } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [activeTab, setActiveTab] = useState('orders');
-
-  // Pull to refresh
-  const handleRefresh = useCallback(async () => {
-    if (user?.uid) {
-      const userOrders = await OrderService.getByUser(user.uid);
-      setOrders(userOrders);
-    }
-  }, [user?.uid]);
-
-  const { isPulling, pullDistance, isRefreshing, onTouchStart, onTouchMove, onTouchEnd } =
-    usePullToRefresh(handleRefresh);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (user?.uid) {
       fetchOrders();
+    } else {
+      setIsLoadingOrders(false);
     }
   }, [user?.uid]);
 
   const fetchOrders = async () => {
-    setIsLoadingOrders(true);
     try {
       const userOrders = await OrderService.getByUser(user!.uid);
       setOrders(userOrders);
@@ -656,270 +748,509 @@ export function ProfileSectionUltra() {
     await signOut();
   };
 
-  const completedOrders = orders.filter((o) => o.status === 'completed').length;
-  const processingOrders = orders.filter(
-    (o) => o.status === 'pending' || o.status === 'processing'
-  ).length;
+  const handleSaveProfile = async (data: any) => {
+    try {
+      await updateProfile({ displayName: data.displayName });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
 
+  // Stats calculation
+  const stats = {
+    totalOrders: orders.length,
+    completedOrders: orders.filter(o => o.status === 'completed').length,
+    processingOrders: orders.filter(o => ['pending', 'processing'].includes(o.status)).length,
+    totalSpent: orders.reduce((sum, o) => sum + o.total_amount, 0),
+    memberSince: user?.createdAt 
+      ? new Date(user.createdAt).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+      : 'Baru'
+  };
 
+  if (!mounted) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center",
+        isDarkMode ? "bg-gray-950" : "bg-gray-50"
+      )}>
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
-  // Show not logged in state only when auth is initialized and user is not authenticated
+  // Not logged in state
   if (!isAuthenticated) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex flex-col items-center justify-center min-h-[60vh] px-4"
-      >
+      <div className={cn(
+        "min-h-screen flex flex-col items-center justify-center px-4",
+        isDarkMode ? "bg-gray-950" : "bg-gray-50"
+      )}>
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-          className={cn(
-            'w-24 h-24 rounded-full flex items-center justify-center mb-4',
-            isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
-          )}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
         >
-          <User className={cn(
-            'h-12 w-12',
-            isDarkMode ? 'text-gray-600' : 'text-gray-400'
-          )} />
-        </motion.div>
-        <h2 className={cn(
-          'text-xl font-semibold mb-2',
-          isDarkMode ? 'text-white' : 'text-gray-800'
-        )}>
-          Belum Masuk
-        </h2>
-        <p className={cn(
-          'text-center mt-2 mb-6 max-w-xs',
-          isDarkMode ? 'text-gray-400' : 'text-gray-500'
-        )}>
-          Silakan masuk untuk melihat profil dan riwayat pesanan Anda
-        </p>
-        <Link to="/auth">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-lg">
+          <div className={cn(
+            "w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-6",
+            isDarkMode ? "bg-gray-800" : "bg-gray-100"
+          )}>
+            <User className={cn(
+              "w-12 h-12",
+              isDarkMode ? "text-gray-600" : "text-gray-400"
+            )} />
+          </div>
+          <h2 className={cn(
+            "text-2xl font-bold mb-2",
+            isDarkMode ? "text-white" : "text-gray-900"
+          )}>
+            Belum Masuk
+          </h2>
+          <p className={cn(
+            "mb-6 max-w-xs",
+            isDarkMode ? "text-gray-400" : "text-gray-500"
+          )}>
+            Silakan masuk untuk melihat profil dan riwayat pesanan Anda
+          </p>
+          <Link to="/auth">
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600">
               Masuk / Daftar
             </Button>
-          </motion.div>
-        </Link>
-      </motion.div>
+          </Link>
+        </motion.div>
+      </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        'pb-24 px-4 pt-4 min-h-screen transition-colors duration-300',
-        isDarkMode ? 'bg-gray-950' : 'bg-gray-50/50'
-      )}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* Pull to refresh indicator */}
-      <AnimatePresence>
-        {(isPulling || isRefreshing) && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: Math.max(pullDistance, isRefreshing ? 60 : 0) }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex items-center justify-center overflow-hidden"
-          >
-            <motion.div
-              animate={{ rotate: isRefreshing ? 360 : pullDistance * 3 }}
-              transition={{ duration: isRefreshing ? 1 : 0, repeat: isRefreshing ? Infinity : 0 }}
-            >
-              <RefreshCw className={cn(
-                'w-6 h-6',
-                isDarkMode ? 'text-gray-400' : 'text-gray-500'
-              )} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Profile Header with Animated Gradient */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.175, 0.885, 0.32, 1.275] }}
-        className={cn(
-          'rounded-3xl p-6 text-white mb-6 relative overflow-hidden',
-          'bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500'
-        )}
-        style={{
-          backgroundSize: '200% 200%',
-          animation: 'gradient-shift 8s ease infinite',
-        }}
-      >
-        {/* Animated background shapes */}
+    <div className={cn(
+      "min-h-screen pb-24",
+      isDarkMode ? "bg-gray-950" : "bg-gray-50"
+    )}>
+      {/* Hero Profile Header */}
+      <div className={cn(
+        "relative overflow-hidden",
+        "bg-gradient-to-br from-blue-600 via-purple-600 to-orange-500"
+      )}>
+        {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -50, 0],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"
+            animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
+            transition={{ duration: 20, repeat: Infinity }}
+            className="absolute -top-20 -right-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"
           />
           <motion.div
-            animate={{
-              x: [0, -50, 0],
-              y: [0, 100, 0],
-              scale: [1, 1.3, 1],
-            }}
-            transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-            className="absolute -bottom-20 -left-20 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl"
+            animate={{ x: [0, -50, 0], y: [0, 100, 0], scale: [1, 1.3, 1] }}
+            transition={{ duration: 15, repeat: Infinity }}
+            className="absolute -bottom-20 -left-20 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl"
           />
         </div>
 
-        <div className="relative flex items-center gap-4">
-          <div className="relative">
+        {/* Content */}
+        <div className="relative px-4 py-12 lg:py-16">
+          <div className="max-w-6xl mx-auto">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col md:flex-row items-center md:items-end gap-6"
             >
-              <Avatar className="w-24 h-24 border-4 border-white/30 shadow-2xl">
-                <AvatarImage
-                  src={profile?.avatar_url || user?.photoURL || ''}
-                  className="object-cover"
-                />
-                <AvatarFallback className="bg-white/20 text-white text-3xl font-bold backdrop-blur-sm">
-                  {(profile?.full_name || user?.displayName || 'U').charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </motion.div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowEditDialog(true)}
-              className="absolute bottom-0 right-0 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-lg"
-            >
-              <Camera className="h-4 w-4 text-gray-700" />
-            </motion.button>
-          </div>
+              {/* Avatar */}
+              <div className="relative">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  className="relative"
+                >
+                  <Avatar className="w-28 h-28 md:w-32 md:h-32 border-4 border-white/30 shadow-2xl">
+                    <AvatarImage src={user?.photoURL || ''} className="object-cover" />
+                    <AvatarFallback className="text-4xl font-bold bg-white/20 text-white backdrop-blur-sm">
+                      {(user?.displayName || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowEditProfile(true)}
+                    className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <Camera className="w-5 h-5 text-gray-700" />
+                  </motion.button>
+                </motion.div>
+              </div>
 
-          <div className="flex-1">
-            <motion.h2
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-2xl font-bold"
-            >
-              {profile?.full_name || user?.displayName}
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-white/70 text-sm"
-            >
-              {profile?.email || user?.email}
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="flex items-center gap-2 mt-2"
-            >
-              <Sparkles className="w-3 h-3 text-yellow-300" />
-              <span className="text-xs text-white/60">Member Premium</span>
+              {/* Info */}
+              <div className="text-center md:text-left flex-1">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="flex items-center justify-center md:justify-start gap-2 mb-1"
+                >
+                  <Sparkles className="w-4 h-4 text-yellow-300" />
+                  <span className="text-white/80 text-sm font-medium">Member Premium</span>
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl md:text-3xl font-bold text-white"
+                >
+                  {user?.displayName || 'Pengguna'}
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-white/70"
+                >
+                  {user?.email}
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex items-center justify-center md:justify-start gap-4 mt-3 text-sm text-white/60"
+                >
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Bergabung {stats.memberSince}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    Indonesia
+                  </span>
+                </motion.div>
+              </div>
+
+              {/* Actions */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="flex gap-2"
+              >
+                <Button
+                  variant="secondary"
+                  className="bg-white/20 text-white border-0 hover:bg-white/30 backdrop-blur-sm"
+                  onClick={() => setShowEditProfile(true)}
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit Profil
+                </Button>
+              </motion.div>
             </motion.div>
           </div>
-
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 15 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowEditDialog(true)}
-            className="p-3 bg-white/20 rounded-full hover:bg-white/30 backdrop-blur-sm transition-colors"
-          >
-            <Edit2 className="h-5 w-5" />
-          </motion.button>
         </div>
-      </motion.div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard
-          icon={ShoppingBag}
-          value={orders.length}
-          label="Total Pesanan"
-          color="bg-gradient-to-br from-blue-500 to-blue-600"
-          delay={0.1}
-          isDarkMode={isDarkMode}
-        />
-        <StatCard
-          icon={CheckCircle2}
-          value={completedOrders}
-          label="Selesai"
-          color="bg-gradient-to-br from-green-500 to-emerald-600"
-          delay={0.2}
-          isDarkMode={isDarkMode}
-        />
-        <StatCard
-          icon={Clock}
-          value={processingOrders}
-          label="Diproses"
-          color="bg-gradient-to-br from-orange-500 to-amber-600"
-          delay={0.3}
-          isDarkMode={isDarkMode}
-        />
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList
-          className={cn(
-            'grid w-full grid-cols-2 p-1 rounded-2xl h-auto',
-            isDarkMode ? 'bg-gray-800/80' : 'bg-gray-200/50'
-          )}
-        >
-          <TabsTrigger
-            value="orders"
-            className={cn(
-              'rounded-xl py-3 text-sm font-medium transition-all duration-200',
-              'data-[state=active]:shadow-lg',
-              isDarkMode
-                ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white'
-                : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'
-            )}
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Pesanan
-          </TabsTrigger>
-          <TabsTrigger
-            value="settings"
-            className={cn(
-              'rounded-xl py-3 text-sm font-medium transition-all duration-200',
-              'data-[state=active]:shadow-lg',
-              isDarkMode
-                ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white'
-                : 'data-[state=active]:bg-white data-[state=active]:text-gray-900'
-            )}
-          >
-            <Edit2 className="w-4 h-4 mr-2" />
-            Pengaturan
-          </TabsTrigger>
-        </TabsList>
+      {/* Quick Stats */}
+      <div className="px-4 -mt-8 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <QuickStatCard
+              icon={ShoppingBag}
+              value={stats.totalOrders}
+              label="Total Pesanan"
+              trend="+12%"
+              color="bg-gradient-to-br from-blue-500 to-blue-600"
+              delay={0.1}
+              isDarkMode={isDarkMode}
+            />
+            <QuickStatCard
+              icon={CheckCircle2}
+              value={stats.completedOrders}
+              label="Selesai"
+              color="bg-gradient-to-br from-green-500 to-emerald-600"
+              delay={0.2}
+              isDarkMode={isDarkMode}
+            />
+            <QuickStatCard
+              icon={Clock}
+              value={stats.processingOrders}
+              label="Diproses"
+              color="bg-gradient-to-br from-orange-500 to-amber-600"
+              delay={0.3}
+              isDarkMode={isDarkMode}
+            />
+            <QuickStatCard
+              icon={TrendingUp}
+              value={`Rp ${(stats.totalSpent / 1000000).toFixed(1)}M`}
+              label="Total Belanja"
+              color="bg-gradient-to-br from-purple-500 to-pink-600"
+              delay={0.4}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        </div>
+      </div>
 
-        <AnimatePresence mode="wait">
-          <TabsContent value="orders" className="mt-4">
-            <motion.div
-              key="orders"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.3 }}
-            >
+      {/* Main Content */}
+      <div className="px-4 mt-8">
+        <div className="max-w-6xl mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className={cn(
+              "w-full md:w-auto grid grid-cols-3 md:inline-flex p-1 rounded-xl",
+              isDarkMode ? "bg-gray-800" : "bg-gray-200/50"
+            )}>
+              <TabsTrigger 
+                value="overview" 
+                className={cn(
+                  "rounded-lg data-[state=active]:shadow-md",
+                  isDarkMode 
+                    ? "data-[state=active]:bg-gray-700 data-[state=active]:text-white" 
+                    : "data-[state=active]:bg-white"
+                )}
+              >
+                <User className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Overview</span>
+                <span className="sm:hidden">Profil</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="orders"
+                className={cn(
+                  "rounded-lg data-[state=active]:shadow-md",
+                  isDarkMode 
+                    ? "data-[state=active]:bg-gray-700 data-[state=active]:text-white" 
+                    : "data-[state=active]:bg-white"
+                )}
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Pesanan
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings"
+                className={cn(
+                  "rounded-lg data-[state=active]:shadow-md",
+                  isDarkMode 
+                    ? "data-[state=active]:bg-gray-700 data-[state=active]:text-white" 
+                    : "data-[state=active]:bg-white"
+                )}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Pengaturan</span>
+                <span className="sm:hidden">Setting</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="mt-6 space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Personal Info */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "p-6 rounded-2xl border",
+                    isDarkMode 
+                      ? "bg-gray-800/50 border-gray-700" 
+                      : "bg-white border-gray-200 shadow-sm"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={cn(
+                      "font-semibold",
+                      isDarkMode ? "text-white" : "text-gray-900"
+                    )}>
+                      Informasi Pribadi
+                    </h3>
+                    <Button variant="ghost" size="sm" onClick={() => setShowEditProfile(true)}>
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center",
+                        isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                      )}>
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className={cn(
+                          "text-sm",
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        )}>Nama</p>
+                        <p className={cn(
+                          "font-medium",
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        )}>{user?.displayName || '-'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center",
+                        isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                      )}>
+                        <Mail className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className={cn(
+                          "text-sm",
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        )}>Email</p>
+                        <p className={cn(
+                          "font-medium",
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        )}>{user?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center",
+                        isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                      )}>
+                        <Shield className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <p className={cn(
+                          "text-sm",
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        )}>Status Akun</p>
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "font-medium",
+                            isDarkMode ? "text-white" : "text-gray-900"
+                          )}>
+                            Terverifikasi
+                          </span>
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Recent Activity */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className={cn(
+                    "p-6 rounded-2xl border",
+                    isDarkMode 
+                      ? "bg-gray-800/50 border-gray-700" 
+                      : "bg-white border-gray-200 shadow-sm"
+                  )}
+                >
+                  <h3 className={cn(
+                    "font-semibold mb-4",
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  )}>
+                    Pesanan Terbaru
+                  </h3>
+                  {orders.slice(0, 3).map((order, idx) => (
+                    <div 
+                      key={order.id}
+                      onClick={() => setSelectedOrder(order)}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors",
+                        isDarkMode 
+                          ? "hover:bg-gray-700/50" 
+                          : "hover:bg-gray-50",
+                        idx !== 0 && (isDarkMode ? "border-t border-gray-700" : "border-t border-gray-100")
+                      )}
+                    >
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                        isDarkMode ? "bg-gray-700" : "bg-gray-100"
+                      )}>
+                        <Package className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-medium truncate",
+                          isDarkMode ? "text-white" : "text-gray-900"
+                        )}>
+                          {order.items[0]?.title}
+                        </p>
+                        <p className={cn(
+                          "text-xs",
+                          isDarkMode ? "text-gray-400" : "text-gray-500"
+                        )}>
+                          {new Date(order.created_at || '').toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                      <ChevronRight className={cn(
+                        "w-4 h-4",
+                        isDarkMode ? "text-gray-500" : "text-gray-400"
+                      )} />
+                    </div>
+                  ))}
+                  {orders.length === 0 && (
+                    <p className={cn(
+                      "text-center py-8",
+                      isDarkMode ? "text-gray-400" : "text-gray-500"
+                    )}>
+                      Belum ada pesanan
+                    </p>
+                  )}
+                  {orders.length > 3 && (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full mt-3"
+                      onClick={() => setActiveTab('orders')}
+                    >
+                      Lihat Semua
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  )}
+                </motion.div>
+              </div>
+
+              {/* Membership Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className={cn(
+                  "p-6 rounded-2xl relative overflow-hidden",
+                  "bg-gradient-to-r from-blue-600 to-purple-600"
+                )}
+              >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Award className="w-5 h-5 text-yellow-300" />
+                      <span className="text-white/80 text-sm font-medium">Member Premium</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-1">
+                      Level {Math.min(Math.floor(stats.totalSpent / 1000000) + 1, 10)}
+                    </h3>
+                    <p className="text-white/70 text-sm">
+                      {stats.totalSpent > 0 
+                        ? `Rp ${(1000000 - (stats.totalSpent % 1000000)).toLocaleString('id-ID')} lagi ke level berikutnya`
+                        : 'Mulai berbelanja untuk naik level'
+                      }
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center border-4 border-white/30">
+                      <span className="text-2xl font-bold text-white">
+                        {Math.min(Math.floor(stats.totalSpent / 1000000) + 1, 10)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-white rounded-full transition-all"
+                      style={{ width: `${((stats.totalSpent % 1000000) / 1000000) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Orders Tab */}
+            <TabsContent value="orders" className="mt-6">
               {isLoadingOrders ? (
-                <OrdersSkeleton isDarkMode={isDarkMode} />
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
               ) : orders.length === 0 ? (
-                <EmptyOrdersState isDarkMode={isDarkMode} />
+                <EmptyOrders isDarkMode={isDarkMode} />
               ) : (
-                <div className="space-y-3">
+                <div className="grid md:grid-cols-2 gap-4">
                   {orders.map((order, index) => (
                     <OrderCard
                       key={order.id}
@@ -931,163 +1262,86 @@ export function ProfileSectionUltra() {
                   ))}
                 </div>
               )}
-            </motion.div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="settings" className="mt-4">
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <SettingsTab />
-              
-              {/* Logout Button */}
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="mt-6 space-y-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.4 }}
-                className="mt-6 px-4"
+                className={cn(
+                  "p-4 rounded-2xl border",
+                  isDarkMode 
+                    ? "bg-gray-800/50 border-gray-700" 
+                    : "bg-white border-gray-200 shadow-sm"
+                )}
               >
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full py-6 rounded-2xl font-medium transition-all duration-200',
-                    'border-2 hover:scale-[1.02] active:scale-[0.98]',
-                    isDarkMode
-                      ? 'border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50'
-                      : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
-                  )}
+                <h3 className={cn(
+                  "font-semibold mb-4",
+                  isDarkMode ? "text-white" : "text-gray-900"
+                )}>
+                  Keamanan Akun
+                </h3>
+                <div className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Lock className="w-4 h-4 mr-3" />
+                    Ubah Password
+                    <ChevronRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Bell className="w-4 h-4 mr-3" />
+                    Notifikasi
+                    <ChevronRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className={cn(
+                  "p-4 rounded-2xl border",
+                  isDarkMode 
+                    ? "bg-gray-800/50 border-gray-700" 
+                    : "bg-white border-gray-200 shadow-sm"
+                )}
+              >
+                <h3 className={cn(
+                  "font-semibold mb-4 text-red-500",
+                  isDarkMode ? "text-red-400" : "text-red-600"
+                )}>
+                  Zona Berbahaya
+                </h3>
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
                   onClick={handleLogout}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Keluar
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Keluar dari Akun
                 </Button>
               </motion.div>
-            </motion.div>
-          </TabsContent>
-        </AnimatePresence>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
-      {/* Edit Profile Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent
-          className={cn(
-            'border-0 shadow-2xl',
-            isDarkMode
-              ? 'bg-gray-900 border border-white/10'
-              : 'bg-white'
-          )}
-        >
-          <DialogHeader>
-            <DialogTitle className={cn(
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            )}>
-              Edit Profil
-            </DialogTitle>
-          </DialogHeader>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="space-y-5 mt-4"
-          >
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <Avatar className="w-24 h-24 border-4 border-blue-500/20">
-                  <AvatarImage
-                    src={profile?.avatar_url || user?.photoURL || ''}
-                    className="object-cover"
-                  />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl">
-                    {(profile?.full_name || user?.displayName || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors">
-                  <Camera className="h-4 w-4 text-white" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                Nama Lengkap
-              </Label>
-              <Input
-                defaultValue={profile?.full_name || ''}
-                className={cn(
-                  'rounded-xl h-12',
-                  isDarkMode
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-500'
-                    : 'bg-gray-50 border-gray-200'
-                )}
-                placeholder="Masukkan nama lengkap"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                Email
-              </Label>
-              <Input
-                defaultValue={profile?.email || ''}
-                disabled
-                className={cn(
-                  'rounded-xl h-12',
-                  isDarkMode
-                    ? 'bg-gray-800/50 border-gray-700 text-gray-500'
-                    : 'bg-gray-100 border-gray-200 text-gray-500'
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                Nomor Telepon
-              </Label>
-              <Input
-                placeholder="Masukkan nomor telepon"
-                className={cn(
-                  'rounded-xl h-12',
-                  isDarkMode
-                    ? 'bg-gray-800 border-gray-700 text-white placeholder:text-gray-500'
-                    : 'bg-gray-50 border-gray-200'
-                )}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className={cn(
-                  'flex-1 rounded-xl h-12',
-                  isDarkMode
-                    ? 'border-gray-700 text-gray-300 hover:bg-gray-800'
-                    : 'border-gray-200'
-                )}
-                onClick={() => setShowEditDialog(false)}
-              >
-                Batal
-              </Button>
-              <Button
-                className="flex-1 rounded-xl h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0"
-                onClick={() => setShowEditDialog(false)}
-              >
-                Simpan
-              </Button>
-            </div>
-          </motion.div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Order Detail Dialog */}
-      <OrderDetailDialog
+      {/* Order Detail Modal */}
+      <OrderDetailModal
         order={selectedOrder}
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
         isDarkMode={isDarkMode}
+      />
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        isDarkMode={isDarkMode}
+        user={user}
+        onSave={handleSaveProfile}
       />
     </div>
   );
