@@ -1,92 +1,187 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, Zap, Headphones, Palette, Shield } from 'lucide-react';
+import { Search, Star, Zap, Headphones, Palette, Shield, ShoppingCart, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useProducts } from '@/hooks/useProducts';
+import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/store/appStore';
 import { audioService } from '@/lib/audio';
-import { LazyImage, LazyBackgroundImage } from '@/components/LazyImage';
 import type { Product } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
+// Mock products data (directly in component for reliability)
+const MOCK_PRODUCTS: Product[] = [
+  {
+    id: 'wifi',
+    title: 'Wi-Fi Installation',
+    category: 'installation',
+    base_price: 89000,
+    discount_price: 79000,
+    stock: 100,
+    image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=400',
+    icon: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=200',
+    rating: 4.8,
+    reviews: 156,
+    duration: '2-3 jam',
+    description: 'Pemasangan dan konfigurasi jaringan wireless profesional untuk rumah dan kantor.',
+    tags: ['network', 'internet', 'setup'],
+    tiers: [
+      { name: 'Basic', price: 89000, features: ['Setup 1 router', 'Konfigurasi dasar', 'Optimasi kecepatan', 'Garansi 1 tahun'] },
+      { name: 'Standard', price: 149000, features: ['Setup mesh network', 'Keamanan advanced', 'Optimasi multi device', 'Guest network', 'Garansi 2 tahun'] },
+      { name: 'Premium', price: 249000, features: ['Enterprise mesh system', 'Security suite', 'IoT management', 'Priority support', 'Garansi 3 tahun'] }
+    ],
+    related: ['vps', 'code']
   },
-};
+  {
+    id: 'cctv',
+    title: 'CCTV Security System',
+    category: 'installation',
+    base_price: 199000,
+    discount_price: 179000,
+    stock: 50,
+    image: 'https://images.unsplash.com/photo-1557324232-b8917d3c3dcb?w=400',
+    icon: 'https://images.unsplash.com/photo-1557324232-b8917d3c3dcb?w=200',
+    rating: 4.7,
+    reviews: 89,
+    duration: '4-6 jam',
+    description: 'Instalasi kamera keamanan lengkap dengan monitoring dan akses mobile.',
+    tags: ['security', 'camera', 'monitoring'],
+    tiers: [
+      { name: 'Basic', price: 199000, features: ['2 kamera HD', 'Recording dasar', 'Akses mobile app', 'Storage 1 TB'] },
+      { name: 'Standard', price: 399000, features: ['4 kamera 4K', 'Night vision', 'Motion detection', 'Cloud backup', 'Storage 2 TB'] },
+      { name: 'Premium', price: 699000, features: ['8 kamera 4K', 'AI detection', '24/7 monitoring', 'Professional monitoring', 'Storage 4 TB'] }
+    ],
+    related: ['wifi', 'vps']
+  },
+  {
+    id: 'code',
+    title: 'Code Error Repair',
+    category: 'technical',
+    base_price: 59000,
+    discount_price: 49000,
+    stock: 200,
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400',
+    icon: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200',
+    rating: 4.9,
+    reviews: 234,
+    duration: '1-4 jam',
+    description: 'Debugging dan optimasi kode expert untuk website dan aplikasi.',
+    tags: ['debugging', 'coding', 'development'],
+    tiers: [
+      { name: 'Basic', price: 59000, features: ['Identifikasi bug', 'Fix sederhana', 'Code review', 'Dokumentasi'] },
+      { name: 'Standard', price: 129000, features: ['Complex debugging', 'Performance optimization', 'Security audit', 'Testing'] },
+      { name: 'Premium', price: 249000, features: ['Full code refactoring', 'Architecture review', 'Performance tuning', 'Long-term support'] }
+    ],
+    related: ['vps', 'wifi']
+  },
+  {
+    id: 'photo',
+    title: 'Photo Editing',
+    category: 'creative',
+    base_price: 29000,
+    discount_price: 25000,
+    stock: 150,
+    image: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=400',
+    icon: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=200',
+    rating: 4.6,
+    reviews: 120,
+    duration: '1-2 hari',
+    description: 'Retouching dan enhancement gambar profesional.',
+    tags: ['photo', 'editing', 'creative'],
+    tiers: [
+      { name: 'Basic', price: 29000, features: ['Color correction', 'Basic retouching', 'Format conversion', '5 revisi'] },
+      { name: 'Standard', price: 79000, features: ['Advanced retouching', 'Background removal', 'Skin smoothing', 'Unlimited revisi'] },
+      { name: 'Premium', price: 149000, features: ['High-end editing', 'Composite work', 'RAW processing', 'Priority delivery'] }
+    ],
+    related: ['video', 'code']
+  },
+  {
+    id: 'video',
+    title: 'Video Editing',
+    category: 'creative',
+    base_price: 79000,
+    discount_price: 69000,
+    stock: 80,
+    image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400',
+    icon: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=200',
+    rating: 4.8,
+    reviews: 95,
+    duration: '2-5 hari',
+    description: 'Editing video dan post-production profesional.',
+    tags: ['video', 'editing', 'production'],
+    tiers: [
+      { name: 'Basic', price: 79000, features: ['Basic cuts', 'Transitions', 'Audio sync', 'Output 1080p'] },
+      { name: 'Standard', price: 199000, features: ['Color grading', 'Motion graphics', 'Sound mixing', 'Output 4K'] },
+      { name: 'Premium', price: 399000, features: ['VFX', 'Animation', 'Professional sound design', 'Cinema quality'] }
+    ],
+    related: ['photo', 'code']
+  },
+  {
+    id: 'vps',
+    title: 'VPS Hosting',
+    category: 'technical',
+    base_price: 49000,
+    discount_price: 39000,
+    stock: 500,
+    image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400',
+    icon: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200',
+    rating: 4.5,
+    reviews: 180,
+    duration: 'Instant',
+    description: 'Solusi hosting Virtual Private Server.',
+    tags: ['hosting', 'server', 'infrastructure'],
+    tiers: [
+      { name: 'Basic', price: 49000, features: ['2 CPU cores', '4GB RAM', '50GB SSD', '1TB bandwidth'] },
+      { name: 'Standard', price: 99000, features: ['4 CPU cores', '8GB RAM', '100GB SSD', '2TB bandwidth'] },
+      { name: 'Premium', price: 199000, features: ['8 CPU cores', '16GB RAM', '200GB SSD', 'Unlimited bandwidth'] }
+    ],
+    related: ['wifi', 'code']
+  }
+];
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 300,
-      damping: 24,
-    },
-  },
-};
-
-const cardHoverVariants = {
-  rest: { scale: 1, y: 0 },
-  hover: {
-    scale: 1.02,
-    y: -4,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 400,
-      damping: 17,
-    },
-  },
-  tap: { scale: 0.98 },
-};
-
-const badgeVariants = {
-  initial: { scale: 0, rotate: -180 },
-  animate: {
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 260,
-      damping: 20,
-    },
-  },
-};
-
-const pulseVariants = {
-  pulse: {
-    scale: [1, 1.05, 1],
-    opacity: [1, 0.8, 1],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
-    },
-  },
-};
+// Banner slides
+const BANNER_SLIDES = [
+  { title: 'Layanan Digital Profesional', subtitle: 'Solusi lengkap untuk kebutuhan teknologi Anda', icon: Zap, color: 'from-blue-600 to-purple-600' },
+  { title: 'Instalasi Wi-Fi & CCTV', subtitle: 'Jaringan aman dan terpercaya', icon: Shield, color: 'from-green-600 to-teal-600' },
+  { title: 'Editing Kreatif', subtitle: 'Photo & video editing profesional', icon: Palette, color: 'from-pink-600 to-rose-600' },
+  { title: 'Support Teknis 24/7', subtitle: 'Tim ahli siap membantu', icon: Headphones, color: 'from-orange-600 to-amber-600' },
+  { title: 'Kualitas Terbaik', subtitle: 'Kepuasan pelanggan prioritas kami', icon: Star, color: 'from-indigo-600 to-blue-600' },
+];
 
 export function HomeSection() {
   const navigate = useNavigate();
-  const { products, isLoading } = useProducts();
-  const { cart, addRecentlyViewed, isDarkMode } = useAppStore();
+  const { cart, addToCart, addRecentlyViewed, isDarkMode, setNotification } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Filter products based on search query only
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-rotate banner
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % BANNER_SLIDES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Filter products
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = searchQuery === '' || 
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      product.title.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query) ||
+      product.tags.some(tag => tag.toLowerCase().includes(query))
+    );
   });
 
   const handleProductClick = (product: Product) => {
@@ -95,418 +190,280 @@ export function HomeSection() {
     navigate(`/product/${product.id}`);
   };
 
-  const isInCart = (productId: string, tierName: string) => {
-    return cart.some(item => item.productId === productId && item.tier === tierName);
+  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation();
+    const tier = product.tiers[0];
+    if (tier) {
+      addToCart(product, tier.name);
+      setNotification({
+        message: `${product.title} ditambahkan ke keranjang`,
+        type: 'success'
+      });
+      audioService.playSuccess();
+    }
   };
 
-  const getCartQuantity = (productId: string, tierName: string) => {
-    const item = cart.find(item => item.productId === productId && item.tier === tierName);
-    return item?.quantity || 0;
+  const isInCart = (productId: string) => {
+    return cart.some(item => item.productId === productId);
   };
+
+  if (isLoading) {
+    return (
+      <div className={cn(
+        "min-h-screen flex items-center justify-center",
+        isDarkMode ? "bg-gray-900" : "bg-gray-50"
+      )}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
 
   return (
-    <motion.div 
-      className={`pb-20 min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className={cn(
+      "min-h-screen pb-24 transition-colors duration-300",
+      isDarkMode ? "bg-gray-950" : "bg-gray-50"
+    )}>
       {/* Hero Banner */}
-      <HeroBanner />
+      <div className="relative h-56 overflow-hidden">
+        <AnimatePresence mode="wait">
+          {BANNER_SLIDES.map((slide, index) => {
+            const Icon = slide.icon;
+            if (currentSlide !== index) return null;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center",
+                  "bg-gradient-to-br",
+                  slide.color
+                )}
+              >
+                {/* Background pattern */}
+                <div className="absolute inset-0 opacity-20">
+                  <div className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl" />
+                  <div className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl" />
+                </div>
+                
+                <div className="relative text-center text-white px-6">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.2, type: 'spring' }}
+                    className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm"
+                  >
+                    <Icon className="w-8 h-8" />
+                  </motion.div>
+                  <motion.h2
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-xl font-bold"
+                  >
+                    {slide.title}
+                  </motion.h2>
+                  <motion.p
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-white/80 text-sm mt-1"
+                  >
+                    {slide.subtitle}
+                  </motion.p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
 
-      {/* Search */}
-      <motion.div 
-        className={`sticky top-[60px] z-30 px-4 py-3 transition-all duration-500 ${isDarkMode ? 'bg-gray-900/95' : 'bg-white/95'} backdrop-blur-sm shadow-sm`}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        {/* Dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {BANNER_SLIDES.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={cn(
+                "h-2 rounded-full transition-all",
+                currentSlide === idx ? "w-6 bg-white" : "w-2 bg-white/50"
+              )}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className={cn(
+        "sticky top-0 z-30 px-4 py-3 border-b",
+        isDarkMode 
+          ? "bg-gray-950/95 border-gray-800" 
+          : "bg-white/95 border-gray-200"
+      )}>
+        <div className="relative max-w-lg mx-auto">
+          <Search className={cn(
+            "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5",
+            isDarkMode ? "text-gray-500" : "text-gray-400"
+          )} />
           <Input
             placeholder="Cari layanan..."
-            className={`pl-9 transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white focus:border-primary' : 'focus:border-primary'}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className={cn(
+              "pl-10 h-11 rounded-xl",
+              isDarkMode 
+                ? "bg-gray-800 border-gray-700 text-white placeholder:text-gray-500" 
+                : "bg-gray-100 border-0"
+            )}
           />
         </div>
-      </motion.div>
+      </div>
 
       {/* Products Grid */}
-      <div className="px-4 py-4">
-        {isLoading ? (
-          <motion.div 
-            className="grid grid-cols-2 gap-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {[1, 2, 3, 4].map((i) => (
-              <motion.div 
-                key={i} 
-                className={`rounded-xl h-64 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
-                variants={itemVariants}
-              >
-                <motion.div
-                  className="w-full h-full rounded-xl"
-                  animate={{
-                    background: [
-                      isDarkMode ? 'rgba(31, 41, 55, 1)' : 'rgba(243, 244, 246, 1)',
-                      isDarkMode ? 'rgba(55, 65, 81, 1)' : 'rgba(229, 231, 235, 1)',
-                      isDarkMode ? 'rgba(31, 41, 55, 1)' : 'rgba(243, 244, 246, 1)',
-                    ],
-                  }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : filteredProducts.length === 0 ? (
-          <motion.div 
-            className="text-center py-12"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <motion.div 
-              className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center transition-colors duration-300 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+      <div className="px-4 py-6">
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
+              className={cn(
+                "w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4",
+                isDarkMode ? "bg-gray-800" : "bg-gray-100"
+              )}
             >
-              <Search className={`h-8 w-8 transition-colors duration-300 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+              <Search className={cn(
+                "w-8 h-8",
+                isDarkMode ? "text-gray-600" : "text-gray-400"
+              )} />
             </motion.div>
-            <p className={`transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tidak ada layanan yang ditemukan</p>
-            {searchQuery && (
-              <motion.button
-                className={`mt-4 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  isDarkMode 
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                onClick={() => setSearchQuery('')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Reset Pencarian
-              </motion.button>
-            )}
-          </motion.div>
+            <p className={cn(
+              "text-lg font-medium",
+              isDarkMode ? "text-gray-300" : "text-gray-700"
+            )}>
+              Tidak ada hasil
+            </p>
+            <p className={cn(
+              "text-sm mt-1",
+              isDarkMode ? "text-gray-500" : "text-gray-500"
+            )}>
+              Coba kata kunci lain
+            </p>
+          </div>
         ) : (
-          <motion.div 
-            className="grid grid-cols-2 gap-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <AnimatePresence mode="popLayout">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onClick={() => handleProductClick(product)}
-                  isInCart={isInCart(product.id, product.tiers[0]?.name || '')}
-                  cartQuantity={getCartQuantity(product.id, product.tiers[0]?.name || '')}
-                  isDarkMode={isDarkMode}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+          <div className="grid grid-cols-2 gap-4">
+            {filteredProducts.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                onClick={() => handleProductClick(product)}
+                className={cn(
+                  "group relative rounded-2xl overflow-hidden cursor-pointer",
+                  "border transition-all duration-300",
+                  isDarkMode 
+                    ? "bg-gray-800 border-gray-700 hover:border-gray-600" 
+                    : "bg-white border-gray-200 hover:border-gray-300 hover:shadow-lg"
+                )}
+              >
+                {/* Image */}
+                <div className="relative aspect-square overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  
+                  {/* Discount Badge */}
+                  {product.discount_price && product.discount_price < product.base_price && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      -{Math.round((1 - product.discount_price / product.base_price) * 100)}%
+                    </div>
+                  )}
+
+                  {/* Rating */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                    <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                    {product.rating}
+                  </div>
+
+                  {/* Add to Cart Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => handleAddToCart(e, product)}
+                    className={cn(
+                      "absolute bottom-2 right-2 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-colors",
+                      isInCart(product.id)
+                        ? "bg-green-500 text-white"
+                        : "bg-white text-gray-900 hover:bg-gray-100"
+                    )}
+                  >
+                    {isInCart(product.id) ? (
+                      <ShoppingCart className="w-4 h-4" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                  </motion.button>
+                </div>
+
+                {/* Content */}
+                <div className="p-3">
+                  <h3 className={cn(
+                    "font-semibold text-sm line-clamp-1",
+                    isDarkMode ? "text-white" : "text-gray-900"
+                  )}>
+                    {product.title}
+                  </h3>
+                  <p className={cn(
+                    "text-xs mt-0.5 line-clamp-1",
+                    isDarkMode ? "text-gray-400" : "text-gray-500"
+                  )}>
+                    {product.description}
+                  </p>
+                  
+                  {/* Price */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={cn(
+                      "font-bold text-sm",
+                      isDarkMode ? "text-blue-400" : "text-blue-600"
+                    )}>
+                      Rp {(product.discount_price || product.base_price).toLocaleString('id-ID')}
+                    </span>
+                    {product.discount_price && product.discount_price < product.base_price && (
+                      <span className={cn(
+                        "text-xs line-through",
+                        isDarkMode ? "text-gray-500" : "text-gray-400"
+                      )}>
+                        Rp {product.base_price.toLocaleString('id-ID')}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Duration */}
+                  <div className={cn(
+                    "flex items-center gap-1 mt-2 text-xs",
+                    isDarkMode ? "text-gray-500" : "text-gray-400"
+                  )}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    {product.duration}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         )}
-      </div>
-
-    </motion.div>
-  );
-}
-
-function HeroBanner() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  const slides = [
-    {
-      title: 'Layanan Digital Profesional',
-      subtitle: 'Solusi lengkap untuk kebutuhan teknologi Anda',
-      image: '/assets/media/b1.webp',
-      icon: Zap,
-    },
-    {
-      title: 'Instalasi Wi-Fi & CCTV',
-      subtitle: 'Jaringan aman dan terpercaya untuk rumah & kantor',
-      image: '/assets/media/b2.webp',
-      icon: Shield,
-    },
-    {
-      title: 'Editing Kreatif',
-      subtitle: 'Photo & video editing profesional',
-      image: '/assets/media/b3.webp',
-      icon: Palette,
-    },
-    {
-      title: 'Support Teknis 24/7',
-      subtitle: 'Tim ahli siap membantu kapan saja',
-      image: '/assets/media/b4.webp',
-      icon: Headphones,
-    },
-    {
-      title: 'Layanan Terbaik',
-      subtitle: 'Kualitas terjamin untuk kepuasan pelanggan',
-      image: '/assets/media/b5.webp',
-      icon: Star,
-    },
-  ];
-
-  // Auto-advance slides
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [slides.length]);
-
-  return (
-    <div className="relative h-48 overflow-hidden">
-      {/* Preload all banner images */}
-      <div className="hidden">
-        {slides.map((slide, idx) => (
-          <img key={idx} src={slide.image} alt="" />
-        ))}
-      </div>
-      
-      <AnimatePresence mode="wait">
-        {slides.map((slide, index) => {
-          const Icon = slide.icon;
-          if (currentSlide !== index) return null;
-          return (
-            <motion.div
-              key={index}
-              className="absolute inset-0 flex items-center justify-center"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.7, ease: 'easeInOut' }}
-            >
-              {/* Background Image with Lazy Loading */}
-              <LazyImage
-                src={slide.image}
-                alt={slide.title}
-                className="absolute inset-0"
-                containerClassName="absolute inset-0"
-                objectFit="cover"
-                priority={index === 0}
-                blurEffect={true}
-              />
-              
-              {/* Dark Overlay for text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/40" />
-              
-              <div className="relative z-10 text-center text-white px-6">
-                <motion.div 
-                  className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/10"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                >
-                  <Icon className="h-8 w-8" />
-                </motion.div>
-                <motion.h2 
-                  className="text-xl font-bold drop-shadow-lg text-shadow"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  {slide.title}
-                </motion.h2>
-                <motion.p 
-                  className="text-white/90 mt-2 text-sm drop-shadow-md"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  {slide.subtitle}
-                </motion.p>
-              </div>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
-
-      {/* Navigation Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {slides.map((_, index) => (
-          <motion.button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              currentSlide === index ? 'bg-white' : 'bg-white/50'
-            }`}
-            animate={{ width: currentSlide === index ? 24 : 8 }}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
-          />
-        ))}
       </div>
     </div>
   );
 }
 
-interface ProductCardProps {
-  product: Product;
-  onClick: () => void;
-  isInCart: boolean;
-  cartQuantity: number;
-  isDarkMode: boolean;
-}
-
-function ProductCard({ product, onClick, isInCart, cartQuantity, isDarkMode }: ProductCardProps) {
-  const price = product.discount_price || product.base_price;
-  const hasDiscount = product.discount_price && product.discount_price < product.base_price;
-  const discountPercent = hasDiscount 
-    ? Math.round(((product.base_price - (product.discount_price || 0)) / product.base_price) * 100)
-    : 0;
-  const isLowStock = product.stock < 20;
-  const isVeryLowStock = product.stock < 10;
-
-  return (
-    <motion.div
-      onClick={onClick}
-      className={`group rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl ${
-        isDarkMode ? 'bg-gray-800' : 'bg-white'
-      }`}
-      variants={itemVariants}
-      initial="rest"
-      whileHover="hover"
-      whileTap="tap"
-      layout
-    >
-      <motion.div 
-        className="relative aspect-square overflow-hidden"
-        variants={cardHoverVariants}
-      >
-        <LazyImage
-          src={product.icon}
-          alt={product.title}
-          containerClassName="w-full h-full"
-          className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-          objectFit="cover"
-          blurEffect={true}
-        />
-        <AnimatePresence>
-          {hasDiscount && (
-            <motion.div
-              className="absolute top-2 left-2"
-              variants={badgeVariants}
-              initial="initial"
-              animate="animate"
-              exit={{ scale: 0, rotate: 180 }}
-            >
-              <Badge className="bg-red-500 text-white border-0 shadow-lg">
-                -{discountPercent}%
-              </Badge>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {isInCart && (
-            <motion.div 
-              className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
-              initial={{ scale: 0, y: -20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0, y: -20 }}
-              transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-            >
-              {cartQuantity}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {isLowStock && (
-            <motion.div
-              className="absolute bottom-2 left-2"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
-              <motion.div
-                variants={pulseVariants}
-                animate="pulse"
-              >
-                <Badge 
-                  className={`text-xs border-0 shadow-lg ${
-                    isVeryLowStock 
-                      ? 'bg-red-500 text-white' 
-                      : 'bg-orange-500 text-white'
-                  }`}
-                >
-                  <span className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full bg-white ${isVeryLowStock ? 'animate-ping' : ''}`} />
-                    Stok {isVeryLowStock ? 'Hampir Habis' : 'Terbatas'}
-                  </span>
-                </Badge>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Hover overlay */}
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-4"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <motion.div
-            className="bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium"
-            initial={{ y: 20, opacity: 0 }}
-            whileHover={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            Lihat Detail
-          </motion.div>
-        </motion.div>
-      </motion.div>
-      <div className="p-3">
-        <motion.h3 
-          className={`font-medium text-sm line-clamp-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : ''}`}
-          layout
-        >
-          {product.title}
-        </motion.h3>
-        <p className={`text-xs line-clamp-2 mt-1 transition-colors duration-300 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          {product.description}
-        </p>
-        <div className="flex items-center justify-between mt-2">
-          <div>
-            <motion.span 
-              className="text-blue-600 font-bold text-sm"
-              key={price}
-              initial={{ scale: 1.2, color: '#f59e0b' }}
-              animate={{ scale: 1, color: '#2563eb' }}
-              transition={{ duration: 0.3 }}
-            >
-              Rp {price.toLocaleString('id-ID')}
-            </motion.span>
-            <AnimatePresence>
-              {hasDiscount && (
-                <motion.span 
-                  className={`text-xs line-through ml-1 transition-colors duration-300 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                >
-                  Rp {product.base_price.toLocaleString('id-ID')}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </div>
-          <motion.div 
-            className="flex items-center text-yellow-500 text-xs"
-            whileHover={{ scale: 1.1 }}
-          >
-            <Star className="h-3 w-3 fill-current" />
-            <span className="ml-0.5">{product.rating}</span>
-          </motion.div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
+export default HomeSection;
